@@ -54,6 +54,7 @@ Component({
     backgroundName: 'backgroundName',
     flexName: 'flex',
     hasError: false,
+    list: [],
     // defaultImage,
   },
   methods: {

@@ -3,7 +3,7 @@ import * as t from "@babel/types";
 import _ from "lodash";
 import eventMap from "./utils/eventMap";
 import logger from "./utils/logUtil";
-import { anyObject, Template } from "./utils/types";
+import { anyObject, Template, NodeType } from "./utils/types";
 import { getCollectedProperty } from "./utils/generatorUtils";
 
 export default function jsxElementGenerator(
@@ -20,7 +20,7 @@ export default function jsxElementGenerator(
   let ast: t.JSXElement;
 
   switch (vnode.type) {
-    case 0:
+    case NodeType.Root:
       // Root
       if (vnode.children && vnode.children.length > 0) {
         element = t.jSXElement(
@@ -37,7 +37,7 @@ export default function jsxElementGenerator(
         debugger;
       }
       break;
-    case 1:
+    case NodeType.Element:
       // Element
       // 1 搜集元素属性；一种是表达式，一种是字面量
       // let commonAttrs: t.JSXAttribute[] = [];
@@ -45,10 +45,10 @@ export default function jsxElementGenerator(
       let classAttrs: t.JSXAttribute[] = [];
 
       let attrs = vnode.attrs;
-      if (attrs) {
+      if (attrs && attrs.length > 0) {
         attrs.forEach((attr: anyObject) => {
           switch (attr.type) {
-            case 10:
+            case NodeType.StyleAttribute:
               // StyleAttribute
               const styleDeclarations = attr.children;
               if (styleDeclarations && styleDeclarations.length > 0) {
@@ -58,7 +58,7 @@ export default function jsxElementGenerator(
                 )[] = [];
 
                 styleDeclarations.forEach((styleDeclaration: anyObject) => {
-                  if (styleDeclaration.type === 12) {
+                  if (styleDeclaration.type === NodeType.StyleDeclaration) {
                     // StyleDeclaration
                     if (styleDeclaration.property && styleDeclaration.value) {
                       // Support following syntax:
@@ -67,14 +67,14 @@ export default function jsxElementGenerator(
                       // <view style="{{color}}_1:red;flex-direction:{{column}}_2;"/> -> <div style={{[color+'_1']:'red',flexDirection:column+'_2'}}/>
                       let property = getCollectedProperty(
                         styleDeclaration.property.map((node: anyObject) => {
-                          if (node.type === 6) {
+                          if (node.type === NodeType.Mustache) {
                             // Mustache
                             attrsCollector.add(node.text);
                             return t.identifier(node.text);
-                          } else if (node.type === 5) {
+                          } else if (node.type === NodeType.Text) {
                             // Text
                             return t.stringLiteral(node.text);
-                          } else if (node.type === 7) {
+                          } else if (node.type === NodeType.WhiteSpace) {
                             // WhiteSpace
                             return t.stringLiteral(" ");
                           }
@@ -87,14 +87,14 @@ export default function jsxElementGenerator(
 
                       let value = getCollectedProperty(
                         styleDeclaration.value.map((node: anyObject) => {
-                          if (node.type === 6) {
+                          if (node.type === NodeType.Mustache) {
                             // Mustache
                             attrsCollector.add(node.text);
                             return t.identifier(node.text);
-                          } else if (node.type === 5) {
+                          } else if (node.type === NodeType.Text) {
                             // Text
                             return t.stringLiteral(node.text);
-                          } else if (node.type === 7) {
+                          } else if (node.type === NodeType.WhiteSpace) {
                             // WhiteSpace
                             return t.stringLiteral(" ");
                           } else {
@@ -155,15 +155,15 @@ export default function jsxElementGenerator(
               if (classNames && classNames.length > 0) {
                 const constValue: (t.StringLiteral | t.Identifier)[] = [];
                 classNames.forEach((className: anyObject) => {
-                  if (className.type === 11) {
+                  if (className.type === NodeType.ClassName) {
                     // className
                     // <view class="class-name1 class-name2 {{cusClassName}} {{name}}_with_name"/> -> <View className={"class-name1" + " " + "class-name2" + " " + cusClassName + " " + name + "_with_name"}/>
                     if (className.children && className.children.length > 0) {
                       className.children.forEach((node: anyObject) => {
-                        if (node.type === 5) {
+                        if (node.type === NodeType.Text) {
                           // Text
                           constValue.push(t.stringLiteral(node.text));
-                        } else if (node.type === 6) {
+                        } else if (node.type === NodeType.Mustache) {
                           // Mustache
                           attrsCollector.add(node.text);
                           constValue.push(t.identifier(node.text));
@@ -173,7 +173,7 @@ export default function jsxElementGenerator(
                         }
                       });
                     }
-                  } else if (className.type === 7) {
+                  } else if (className.type === NodeType.WhiteSpace) {
                     // WhiteSpace
                     constValue.push(t.stringLiteral(" "));
                   } else {
@@ -211,9 +211,228 @@ export default function jsxElementGenerator(
         []
       );
 
-      // TODO: 看下这个 element 是否有 tt:if 等操作，需要在包裹一层东西
       wrappedElement = element;
 
+      // TODO: 看下这个 element 是否有 tt:if 等操作，需要在包裹一层东西
+      let commands = vnode.commands;
+      if (commands && commands.length > 0) {
+        for (let ci = 0; commands.length > ci; ci++) {
+          const command: anyObject = commands[ci];
+          // command
+          if (command.type === NodeType.Attribute) {
+            // Attribute
+            switch (command.name) {
+              case "if":
+                // Support following syntax:
+                // <div tt:if="show"/> -> {show ? <div/> : null}
+                const test = getCollectedProperty(
+                  command.children.map((node: anyObject) => {
+                    if (node.type === NodeType.Mustache) {
+                      // Mustache
+                      attrsCollector.add(node.text);
+                      return t.identifier(node.text);
+                    } else if (node.type === NodeType.Text) {
+                      // Text
+                      return t.stringLiteral(node.text);
+                    } else if (node.type === NodeType.WhiteSpace) {
+                      // WhiteSpace
+                      return t.stringLiteral(" ");
+                    }
+
+                    debugger;
+                    return "";
+                  })
+                );
+
+                wrappedElement = t.jSXExpressionContainer(
+                  t.conditionalExpression(test, element, t.nullLiteral())
+                );
+                break;
+              case "elif":
+              case "else":
+                // Support following syntax:
+                // <div tt:if="{show}"/><div tt:else/> -> {show ? <div/> : <div/>}
+                // <div tt:if="{show1}"/><div tt:elif="{show2}"/><div tt:else/> -> {show1 ? <div/>: show2 ? <div/> : <div/>}
+                const parentJsxElementChildren = parentElement?.children || [];
+
+                // if-else 最合适的挂载点
+                let previousConditionalExpression:
+                  | t.ConditionalExpression
+                  | undefined;
+                if (
+                  parentJsxElementChildren &&
+                  parentJsxElementChildren.length > 0
+                ) {
+                  // 从后向前找， 在 if 中挂载 else、elis
+                  for (let i = parentJsxElementChildren.length; i > 0; i--) {
+                    const node = parentJsxElementChildren[i - 1];
+                    if (
+                      node.type === "JSXExpressionContainer" &&
+                      node.expression &&
+                      node.expression.type === "ConditionalExpression"
+                    ) {
+                      previousConditionalExpression = node.expression;
+
+                      // 找到不是 ConditionalExpression 的位置（也就是 nullLiteral）
+                      while (
+                        previousConditionalExpression &&
+                        t.isConditionalExpression(
+                          previousConditionalExpression?.alternate
+                        )
+                      ) {
+                        previousConditionalExpression =
+                          previousConditionalExpression?.alternate;
+                      }
+
+                      // 再次检查
+                      if (
+                        !t.isNullLiteral(
+                          previousConditionalExpression?.alternate
+                        )
+                      ) {
+                        previousConditionalExpression = undefined;
+                        debugger;
+                      } else {
+                        // 找到合法的 if 挂载点
+                        break;
+                      }
+                    }
+                  }
+                }
+
+                if (previousConditionalExpression) {
+                  if (command.name === "else") {
+                    previousConditionalExpression.alternate = element;
+                  } else if (command.name === "elif") {
+                    const test = getCollectedProperty(
+                      command.children.map((node: anyObject) => {
+                        if (node.type === NodeType.Mustache) {
+                          // Mustache
+                          attrsCollector.add(node.text);
+                          return t.identifier(node.text);
+                        } else if (node.type === NodeType.Text) {
+                          // Text
+                          return t.stringLiteral(node.text);
+                        } else if (node.type === NodeType.WhiteSpace) {
+                          // WhiteSpace
+                          return t.stringLiteral(" ");
+                        }
+
+                        debugger;
+                        return "";
+                      })
+                    );
+
+                    previousConditionalExpression.alternate = t.conditionalExpression(
+                      test,
+                      element,
+                      previousConditionalExpression.alternate
+                    );
+                  } else {
+                    debugger;
+                  }
+
+                  // 递归一次子组件
+                  // TODO: 要重构
+                  if (vnode.children && vnode.children.length > 0) {
+                    vnode.children.forEach((child: anyObject) => {
+                      // wrappedElement 对外， element 是内部的东西，看下要往 element 中塞入 children
+                      jsxElementGenerator(child, element, attrsCollector);
+                    });
+                  }
+
+                  return {
+                    ast: element,
+                    attrsCollector,
+                  };
+                }
+
+                break;
+              case "for":
+                const forIdentifier = getCollectedProperty(
+                  command.children.map((node: anyObject) => {
+                    if (node.type === NodeType.Mustache) {
+                      // Mustache
+                      attrsCollector.add(node.text);
+                      return t.identifier(node.text);
+                    } else if (node.type === NodeType.Text) {
+                      // Text
+                      return t.stringLiteral(node.text);
+                    } else if (node.type === NodeType.WhiteSpace) {
+                      // WhiteSpace
+                      return t.stringLiteral(" ");
+                    }
+
+                    debugger;
+                    return "";
+                  })
+                );
+
+                let forItemName = "item";
+                const forItemNode: anyObject = vnode.commands.find(
+                  (i: anyObject) => i.name === "for-item"
+                );
+                if (
+                  forItemNode &&
+                  forItemNode.children &&
+                  forItemNode.children.length > 0
+                ) {
+                  const firstTextNode = forItemNode.children[0];
+                  if (firstTextNode.type === NodeType.Text) {
+                    forItemName = firstTextNode.text;
+                  } else {
+                    debugger;
+                  }
+                }
+
+                let forIndexName = "index";
+                const forIndexNode: anyObject = vnode.commands.find(
+                  (i: anyObject) => i.name === "for-index"
+                );
+                if (
+                  forIndexNode &&
+                  forIndexNode.children &&
+                  forIndexNode.children.length > 0
+                ) {
+                  const firstTextNode = forIndexNode.children[0];
+                  if (firstTextNode.type === NodeType.Text) {
+                    forIndexName = firstTextNode.text;
+                  } else {
+                    debugger;
+                  }
+                }
+
+                wrappedElement = t.jSXExpressionContainer(
+                  t.callExpression(
+                    t.memberExpression(forIdentifier, t.identifier("map")),
+                    [
+                      t.arrowFunctionExpression(
+                        [t.identifier(forItemName), t.identifier(forIndexName)],
+                        element
+                      ),
+                    ]
+                  )
+                );
+
+                break;
+              case "for-item":
+                // 在 for 分支已处理
+                break;
+              case "for-index":
+                // 在 for 分支已处理
+                break;
+              default:
+                debugger;
+                break;
+            }
+          } else {
+            debugger;
+          }
+        }
+      }
+
+      // 递归一次子组件
+      // TODO: 要重构
       if (vnode.children && vnode.children.length > 0) {
         vnode.children.forEach((child: anyObject) => {
           // wrappedElement 对外， element 是内部的东西，看下要往 element 中塞入 children
@@ -222,46 +441,46 @@ export default function jsxElementGenerator(
       }
 
       break;
-    case 2:
+    case NodeType.ContentElement:
       // ContentElement
       debugger;
       break;
-    case 3:
+    case NodeType.ImportElement:
       // ImportElement
       debugger;
       break;
-    case 4:
+    case NodeType.Comment:
       // Comment 什么也不做
       break;
-    case 5:
+    case NodeType.Text:
       // Text
       wrappedElement = t.jSXText(vnode.text);
       break;
-    case 6:
+    case NodeType.Mustache:
       // Mustache
       debugger;
       break;
-    case 7:
+    case NodeType.WhiteSpace:
       // WhiteSpace
       debugger;
       break;
-    case 8:
+    case NodeType.Attribute:
       // Attribute
       debugger;
       break;
-    case 9:
+    case NodeType.ClassAttribute:
       // ClassAttribute
       debugger;
       break;
-    case 10:
+    case NodeType.StyleAttribute:
       // StyleAttribute
       debugger;
       break;
-    case 11:
+    case NodeType.ClassName:
       // ClassName
       debugger;
       break;
-    case 12:
+    case NodeType.StyleDeclaration:
       // StyleDeclaration
       debugger;
       break;

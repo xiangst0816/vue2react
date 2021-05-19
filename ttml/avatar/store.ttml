@@ -1,0 +1,33 @@
+<!--comment properties-->
+<view>
+    <!--  style class-->
+    <text style="color:red;flex-direction: column;" class="class-name1 class-name2">
+        字符串属性
+    </text>
+    <text style="color:red;transform: translateX(-{{25 * index}}%) translateZ({{1000-index}}px);flex-direction: {{direction}};{{backgroundName}}: white;{{flexName}}-direction: column;{{custiomStyle1 + custiomStyle2}}"
+          class="class-name1 class-name2 {{cusClassName}} {{name}}_with_name">
+        属性包涵 Mustache
+    </text>
+
+    <!-- if else  elis-->
+    <text tt:if="{{hasError}}">IF</text>
+    <text tt:else>ELSE!!!!</text>
+
+    <text tt:if="{{hasError}}">IF</text>
+    <text tt:elif="{{!hasError}}">ELIF!!!!</text>
+    <text tt:elif="{{!hasError}}">ELIF!!!!</text>
+    <text tt:elif="{{!hasError}}">ELIF!!!!</text>
+    <text tt:elif="{{!hasError}}">ELIF!!!!</text>
+    <text tt:elif="{{!hasError}}">ELIF!!!!</text>
+    <text tt:else>ELSE!!!!</text>
+
+    <!-- for-->
+    <block tt:for="{{[1,2,3,4,5]}}">
+        <text>{{item}}</text>
+    </block>
+
+    <block tt:for="{{list}}" tt:for-item="item2" tt:for-index="index2">
+        <text>{{item2}}</text>
+        <text>{{index2}}</text>
+    </block>
+</view>

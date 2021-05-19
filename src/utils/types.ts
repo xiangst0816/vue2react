@@ -25,3 +25,19 @@ export interface Log {
   msg: string;
   type: string;
 }
+
+export enum NodeType {
+  Root,
+  Element,
+  ContentElement,
+  ImportElement,
+  Comment,
+  Text,
+  Mustache,
+  WhiteSpace,
+  Attribute,
+  ClassAttribute,
+  StyleAttribute,
+  ClassName,
+  StyleDeclaration,
+}
