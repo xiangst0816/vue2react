@@ -11,6 +11,10 @@ export default function reactTemplateBuilder(app: App) {
         super(props);
         this.state=STATE;
       }
+       styleStringToObject () {
+          // TODO: 待完成
+          return {}
+       }
     }
   `;
 

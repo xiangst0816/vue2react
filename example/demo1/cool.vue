@@ -16,6 +16,9 @@
     <h1 href="">{{reverseName}}</h1>
     <loader />
   </div>
+  <div v-else>
+    hello else
+  </div>
 </template>
 
 <script>

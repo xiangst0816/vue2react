@@ -1,12 +1,22 @@
-import * as t from '@babel/types';
+import * as t from "@babel/types";
 
 // Life-cycle methods relations mapping
 export const cycle: { [name: string]: any } = {
-  created: 'componentWillMount',
-  mounted: 'componentDidMount',
-  updated: 'componentDidUpdate',
-  beforeDestroy: 'componentWillUnmount',
-  errorCaptured: 'componentDidCatch'
+  // Component 部分
+  created: "componentCreated", // * 需要在 constructor 写明 this.componentCreated()
+  attached: "componentAttached", // * 需要在 constructor 写明 this.componentAttached()，created 之后调用
+  ready: "componentDidMount",
+  detached: "componentWillUnmount",
+  error: "componentDidCatch",
+  moved: "componentMoved", // 没有对等实现
+  // Card 部分
+  // TODO: 待定
+
+  // created: 'componentWillMount',
+  // mounted: 'componentDidMount',
+  // updated: 'componentDidUpdate',
+  // beforeDestroy: 'componentWillUnmount',
+  // errorCaptured: 'componentDidCatch'
 };
 
 export function genPropTypes(props: { [name: string]: any }) {
@@ -17,17 +27,17 @@ export function genPropTypes(props: { [name: string]: any }) {
       const obj = props[name];
       let val;
 
-      if (obj.type === 'typesOfArray') {
+      if (obj.type === "typesOfArray") {
         // Support following syntax:
         // static propType = {text: PropTypes.oneOfType([PropTypes.string, PropTypes.number])}
-        const elements = (obj.typeValue as string[]).map(type =>
-          t.memberExpression(t.identifier('PropTypes'), t.identifier(type))
+        const elements = (obj.typeValue as string[]).map((type) =>
+          t.memberExpression(t.identifier("PropTypes"), t.identifier(type))
         );
 
         val = t.callExpression(
           t.memberExpression(
-            t.identifier('PropTypes'),
-            t.identifier('oneOfType')
+            t.identifier("PropTypes"),
+            t.identifier("oneOfType")
           ),
           [t.arrayExpression(elements)]
         );
@@ -35,11 +45,11 @@ export function genPropTypes(props: { [name: string]: any }) {
         // Support following syntax:
         // static propType = {title: PropTypes.string, list: PropTypes.array.isRequired}
         val = t.memberExpression(
-          t.identifier('PropTypes'),
+          t.identifier("PropTypes"),
           t.identifier(obj.typeValue)
         );
         if (obj.required) {
-          val = t.memberExpression(val, t.identifier('isRequired'));
+          val = t.memberExpression(val, t.identifier("isRequired"));
         }
       }
 
@@ -48,7 +58,7 @@ export function genPropTypes(props: { [name: string]: any }) {
   }
   // babel not support generate static class property now.
   return t.classProperty(
-    t.identifier('static propTypes'),
+    t.identifier("static propTypes"),
     t.objectExpression(properties)
   );
 }
@@ -64,19 +74,19 @@ export function genDefaultProps(props: { [name: string]: any }) {
         // igonre "type === 'typesOfArray'" condition,
         // because the defaultValue is undefined when type is typesOfArray
         switch (obj.type) {
-          case 'string':
+          case "string":
             val = t.stringLiteral(obj.defaultValue);
             break;
-          case 'boolean':
+          case "boolean":
             val = t.booleanLiteral(obj.defaultValue);
             break;
-          case 'number':
+          case "number":
             val = t.numericLiteral(Number(obj.defaultValue));
             break;
-          case 'array':
+          case "array":
             val = t.arrayExpression(obj.defaultValue.elements);
             break;
-          case 'object':
+          case "object":
             val = t.objectExpression(obj.defaultValue.properties);
             break;
           default:
@@ -88,7 +98,7 @@ export function genDefaultProps(props: { [name: string]: any }) {
   }
   // babel not support generate static class property now.
   return t.classProperty(
-    t.identifier('static defaultProps'),
+    t.identifier("static defaultProps"),
     t.objectExpression(properties)
   );
 }
@@ -96,8 +106,8 @@ export function genDefaultProps(props: { [name: string]: any }) {
 export function formatComponentName(name: string): string {
   return name
     ? name
-        .split('-')
-        .map(item => item[0].toUpperCase() + item.substr(1))
-        .join('')
-    : 'ReactComponent';
+        .split("-")
+        .map((item) => item[0].toUpperCase() + item.substr(1))
+        .join("")
+    : "ReactComponent";
 }

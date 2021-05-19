@@ -8,6 +8,8 @@
     "dev-docs": "cross-env NODE_ENV=development webpack-dev-server",
     "build-docs": "cross-env NODE_ENV=production webpack && rm -rf output && rm -rf dist/*.js.map",
     "build-lib": "rm -rf lib && tsc --target es2015 --declaration && cp -r ./output/src/. ./lib && rm -rf output",
+    "build-dist": "tsc",
+    "dev-dist": "tsc -w",
     "deploy": "npm run build-lib && npm publish",
     "lint": "tslint  --project tsconfig.json 'src/**/*.ts' 'docs/**/*.ts' 'docs/**/*.tsx'"
   },
@@ -50,9 +52,12 @@
     "@babel/template": "^7.4.4",
     "@babel/traverse": "^7.4.3",
     "@babel/types": "^7.4.0",
+    "@byted-lynx/parser-ttml": "^2.4.4",
+    "@types/lodash": "^4.14.169",
     "chalk": "^2.4.2",
     "commander": "^2.20.0",
     "inquirer": "^6.3.1",
+    "lodash": "^4.17.21",
     "prettier": "^1.18.2",
     "vue-template-compiler": "^2.6.10"
   },
