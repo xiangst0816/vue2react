@@ -13,7 +13,8 @@ export interface Script {
 
 export interface Template {
   ast: t.JSXElement | undefined;
-  attrsCollector: Set<string>;
+  attrsCollector: Readonly<Set<string>>;
+  templateCollector: Readonly<Set<t.ClassMethod>>;
 }
 
 export interface App {

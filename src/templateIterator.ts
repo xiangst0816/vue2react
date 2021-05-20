@@ -1,8 +1,6 @@
-const compiler = require("vue-template-compiler");
+// const compiler = require("vue-template-compiler");
 const { parse } = require("@byted-lynx/parser-ttml");
 
-console.log("parse");
-console.log(parse);
 import jsxElementGenerator from "./jsxElementGenerator";
 import logger from "./utils/logUtil";
 import { Template } from "./utils/types";
@@ -14,7 +12,10 @@ export default function templateIterator(template: string): Template {
   //   whitespace: "condense",
   // });
 
+
+
   if (errors.length > 0) {
+    console.log(errors)
     return errors.forEach((error: string) => {
       logger.log(`${error} ---vue-template-compiler: compile`, "error");
     });
@@ -26,5 +27,5 @@ export default function templateIterator(template: string): Template {
   //   });
   // }
 
-  return jsxElementGenerator(root, null, new Set());
+  return jsxElementGenerator(root, undefined, new Set(), new Set());
 }

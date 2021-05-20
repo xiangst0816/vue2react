@@ -51,8 +51,8 @@ function transformCode(
   const reactCode = targetCode
   // const reactCode = formatCode(targetCode, "react");
 
-  console.log("reactCode");
-  console.log(reactCode);
+  // console.log("reactCode");
+  // console.log(reactCode);
 
   const styles = [];
   return [reactCode, styles];

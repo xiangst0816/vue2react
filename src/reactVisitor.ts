@@ -1,9 +1,8 @@
-import traverse, { NodePath } from "@babel/traverse";
+import  { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
-import * as parser from "@babel/parser";
 
 import { App } from "./utils/types";
-import { genPropTypes, genDefaultProps } from "./utils/tools";
+import { genPropTypes, genDefaultProps,getIdentifierFromTexts } from "./utils/tools";
 
 export default class ReactVisitor {
   app: App;
@@ -59,23 +58,12 @@ export default class ReactVisitor {
         path.node.body.push(methods[name]);
       }
     }
-  }
 
-  _getIdentifierTexts(attrs: string[]): string[] {
-    const list: string[] = [];
-    // Notice: '25 * index', 'value1 + value2' 这里的 attr 拆分出来真正的变量
-    attrs.forEach((attr) => {
-      const ast = parser.parse(attr);
-      traverse(ast, {
-        Identifier(path) {
-          if (!list.includes(path.node.name)) {
-            list.push(path.node.name);
-          }
-        },
-      });
+    // template
+    const templateCollector = this.app.template.templateCollector;
+    templateCollector.forEach((template) => {
+      path.node.body.push(template);
     });
-
-    return list;
   }
 
   genRenderMethods(path: NodePath<t.ClassBody>) {
@@ -86,9 +74,10 @@ export default class ReactVisitor {
     let methodProperties: t.ObjectProperty[] = [];
     let computed: string[] = [];
 
-    const attrsCollector = this._getIdentifierTexts([
-      ...this.app.template.attrsCollector,
+    const attrsCollector = getIdentifierFromTexts([
+      ...(this.app.template.attrsCollector as Set<string>),
     ]);
+
     attrsCollector.forEach((attr) => {
       if (this.app.script.data[attr]) {
         dataProperties.push(
@@ -103,7 +92,7 @@ export default class ReactVisitor {
           t.objectProperty(t.identifier(attr), t.identifier(attr), false, true)
         );
       } else {
-        debugger;
+        console.log(`属性映射未识别，原样输出 ->`, attr);
       }
       // else if (this.app.script.computed[attr]) {
       //   computed.push(attr);
@@ -172,4 +161,8 @@ export default class ReactVisitor {
 
     path.node.body.push(render);
   }
+
+  // genTemplateComponent(path: NodePath<t.ClassBody>){
+  //
+  // }
 }

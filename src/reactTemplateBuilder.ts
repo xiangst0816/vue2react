@@ -13,7 +13,9 @@ export default function reactTemplateBuilder(app: App) {
       }
        styleStringToObject () {
           // TODO: 待完成
-          return {}
+          return {
+            "todo":"待完成"
+          }
        }
     }
   `;

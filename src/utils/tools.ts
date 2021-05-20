@@ -1,4 +1,7 @@
 import * as t from "@babel/types";
+import * as parser from "@babel/parser";
+import traverse from "@babel/traverse";
+import _ from "lodash";
 
 // Life-cycle methods relations mapping
 export const cycle: { [name: string]: any } = {
@@ -110,4 +113,28 @@ export function formatComponentName(name: string): string {
         .map((item) => item[0].toUpperCase() + item.substr(1))
         .join("")
     : "ReactComponent";
+}
+
+export function getIdentifierFromTexts(attrs: string[]): string[] {
+  const list: string[] = [];
+  // Notice: '25 * index', 'value1 + value2' 这里的 attr 拆分出来真正的变量
+  attrs.forEach((attr) => {
+    const ast = parser.parse(attr);
+    traverse(ast, {
+      Identifier(path) {
+        if (!list.includes(path.node.name)) {
+          list.push(path.node.name);
+        }
+      },
+    });
+  });
+
+  return list;
+}
+
+//  <template name="xxx"> -> this.renderXxxTemplateComponent
+export function getTemplateComponentName (text:string) {
+  return _.camelCase(
+      `render-${text}-template-component`
+  )
 }
