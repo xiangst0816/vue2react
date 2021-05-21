@@ -6,7 +6,7 @@ export interface Script {
   data: anyObject;
   props: anyObject;
   methods: anyObject;
-  // computed: anyObject;
+  computed: anyObject;
   imports: t.ImportDeclaration[];
   // TODO: lepus config
 }

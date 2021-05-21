@@ -16,7 +16,7 @@ export default class ScriptVisitor {
       data: {},
       props: {},
       methods: {},
-      // computed: {},
+      computed: {},
     };
   }
 
@@ -52,16 +52,13 @@ export default class ScriptVisitor {
     });
   }
 
-  methodsHandler(path: NodePath<t.ObjectMethod>, isCycle: boolean) {
-    const name = isCycle
-      ? cycle[(path.node.key as t.Identifier).name]
-      : (path.node.key as t.Identifier).name;
-    let params = isCycle ? [] : path.node.params;
+  cycleMethodHandler(path: NodePath<t.ObjectMethod>) {
+    const name = cycle[(path.node.key as t.Identifier).name];
+    let params: any[] = [];
     const blockStatement = formatThisExpression(path, this.script);
 
-    // transform vue method and cylce to react method and cycle
-    if (name === "componentDidCatch") {
-      params = [t.identifier("error"), t.identifier("info")];
+    if (name === "error") {
+      params = [t.identifier("error")];
     }
 
     const classMethod = t.classMethod(
@@ -73,15 +70,33 @@ export default class ScriptVisitor {
     this.script.methods[name] = classMethod;
   }
 
-  // computedHandler(path: NodePath<t.ObjectMethod>) {
-  //   const blockStatement = formatThisExpression(path, this.script);
-  //   this.script.computed[(path.node.key as t.Identifier).name] = t.classMethod(
-  //     "method",
-  //     path.node.key,
-  //     [],
-  //     blockStatement
-  //   );
+  objectMethodHandler(path: NodePath<t.ObjectMethod>) {
+    const name = (path.node.key as t.Identifier).name;
+    let params = path.node.params;
+    const blockStatement = formatThisExpression(path, this.script);
+    const classMethod = t.classMethod(
+      "method",
+      t.identifier(name),
+      params,
+      blockStatement
+    );
+    this.script.methods[name] = classMethod;
+  }
+
+  // objectPropertyMethodHandler(path: NodePath<t.ObjectProperty>) {
+  //   // 123
+  //   path;
   // }
+
+  computedHandler(path: NodePath<t.ObjectMethod>) {
+    const blockStatement = formatThisExpression(path, this.script);
+    this.script.computed[(path.node.key as t.Identifier).name] = t.classMethod(
+      "method",
+      path.node.key,
+      [],
+      blockStatement
+    );
+  }
 
   propsHandler(path: NodePath<t.ObjectProperty>) {
     const nodeList = (path.node.value as t.ObjectExpression)
@@ -148,11 +163,6 @@ export default class ScriptVisitor {
                     // title: {type: String}
                     this.prop.type = node.value.name.toLowerCase();
                     this.prop.typeValue = this.prop.type;
-
-                    // for -> PropTypes.bool
-                    if (this.prop.typeValue === "boolean") {
-                      this.prop.typeValue = "bool";
-                    }
                   } else if (t.isArrayExpression(node.value)) {
                     // Support following syntax:
                     // title: {type: [String, Number]}
@@ -160,12 +170,9 @@ export default class ScriptVisitor {
                       .map((element) =>
                         (element as t.Identifier).name.toLowerCase()
                       )
-                      .map((i) => (i === "boolean" ? "bool" : i));
-
                     this.prop.type =
                       types.length > 1 ? "typesOfArray" : types[0];
                     this.prop.typeValue = types.length > 1 ? types : types[0];
-
                   } else {
                     logger.log(
                       `The type in ${this.key} prop only supports identifier or array expression, eg: Boolean, [String]`,

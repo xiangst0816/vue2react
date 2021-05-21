@@ -22,6 +22,10 @@ export const cycle: { [name: string]: any } = {
   // errorCaptured: 'componentDidCatch'
 };
 
+function getFormatPropType(type: string) {
+  return type === "boolean" ? "bool" : type;
+}
+
 export function genPropTypes(props: { [name: string]: any }) {
   const properties: t.ObjectProperty[] = [];
 
@@ -34,7 +38,10 @@ export function genPropTypes(props: { [name: string]: any }) {
         // Support following syntax:
         // static propType = {text: PropTypes.oneOfType([PropTypes.string, PropTypes.number])}
         const elements = (obj.typeValue as string[]).map((type) =>
-          t.memberExpression(t.identifier("PropTypes"), t.identifier(type))
+          t.memberExpression(
+            t.identifier("PropTypes"),
+            t.identifier(getFormatPropType(type))
+          )
         );
 
         val = t.callExpression(
@@ -49,7 +56,7 @@ export function genPropTypes(props: { [name: string]: any }) {
         // static propType = {title: PropTypes.string, list: PropTypes.array.isRequired}
         val = t.memberExpression(
           t.identifier("PropTypes"),
-          t.identifier(obj.typeValue)
+          t.identifier(getFormatPropType(obj.typeValue))
         );
         if (obj.required) {
           val = t.memberExpression(val, t.identifier("isRequired"));
@@ -107,10 +114,7 @@ export function genDefaultProps(props: { [name: string]: any }) {
 }
 
 export function formatComponentName(name: string): string {
-
-  return name
-    ? _.upperFirst(_.camelCase(name))
-    : "ReactComponent";
+  return name ? _.upperFirst(_.camelCase(name)) : "ReactComponent";
 }
 
 export function getIdentifierFromTexts(attrs: string[]): string[] {
@@ -131,8 +135,6 @@ export function getIdentifierFromTexts(attrs: string[]): string[] {
 }
 
 //  <template name="xxx"> -> this.renderXxxTemplateComponent
-export function getTemplateComponentName (text:string) {
-  return _.camelCase(
-      `render-${text}-template-component`
-  )
+export function getTemplateComponentName(text: string) {
+  return _.camelCase(`render-${text}-template-component`);
 }

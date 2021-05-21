@@ -3,76 +3,54 @@ import traverse, { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import ScriptVisitor from "./scriptVisitor";
-import { Identifier } from "babel-types/ts3.6";
+import { identifier, Identifier, objectMethod } from "babel-types/ts3.6";
 
 export default function scriptIterator(script: string) {
-  // AST for script in Vue
+  // AST for script in lynx
   const vast = parse(script, {
     sourceType: "module",
   });
 
   const visitor = new ScriptVisitor();
 
+  // fix method write way
+  // { onError: function () {} } -> { onError () {} }
+  traverse(vast, {
+    ObjectProperty(path: NodePath<t.ObjectProperty>) {
+      const name = (path.node.key as t.Identifier).name;
+      if (t.isFunctionExpression(path.node.value)) {
+        const params = path.node.value.params;
+        const body = path.node.value.body;
+
+        path.replaceWith(
+          t.objectMethod("method", t.identifier(name), params, body)
+        );
+      }
+    },
+  });
+
   // collect props and data key firstly
   traverse(vast, {
-    // ObjectMethod(path: NodePath<t.ObjectMethod>) {
-    //   const parent = path.parentPath.parent;
-    //   const name = (path.node.key as t.Identifier).name;
-    //
-    //   if (parent && t.isCallExpression(parent)) {
-    //     switch (name) {
-    //       case "data":
-    //         // Support following syntax:
-    //         // data() => { return {a: 1}}
-    //         visitor.dataHandler(path.node.body.body, false);
-    //         break;
-    //       default:
-    //         break;
-    //     }
-    //   }
-    // },
-
     ObjectProperty(path: NodePath<t.ObjectProperty>) {
       const parent = path.parentPath.parent;
       const name = (path.node.key as t.Identifier).name;
       if (
         parent &&
         t.isCallExpression(parent) &&
-        (parent.callee as Identifier).name === "Component"
+        ((parent.callee as Identifier).name === "Component" ||
+          (parent.callee as Identifier).name === "Card")
       ) {
         switch (name) {
-          // instance.data
+          // opt.data
           case "data":
             const node = path.node.value;
-            // if (t.isArrowFunctionExpression(node)) {
-            //   if ((node.body as t.BlockStatement).body) {
-            //     // Support following syntax:
-            //     // data: () => { return {a: 1}}
-            //     visitor.dataHandler(
-            //       (node.body as t.BlockStatement).body,
-            //       false
-            //     );
-            //   } else {
-            //     // Support following syntax:
-            //     // data: () => ({a: 1})
-            //     visitor.dataHandler(
-            //       (node.body as t.ObjectExpression).properties,
-            //       true
-            //     );
-            //   }
-            // } else if (t.isFunctionExpression(node)) {
-            //   // Support following syntax:
-            //   // data: function () => { return {a: 1}}
-            //   visitor.dataHandler(node.body.body, false);
-            // } else
-
             if (t.isObjectExpression(node)) {
               // Support following syntax:
               // data: {a: 1}
               visitor.dataHandler(node.properties, true);
             }
             break;
-          // instance.props
+          // opt.props
           case "properties":
             visitor.propsHandler(path);
             break;
@@ -89,37 +67,51 @@ export default function scriptIterator(script: string) {
       visitor.importHandler(path);
     },
 
+    // TODO： 顶部 var
+
     ObjectMethod(path: NodePath<t.ObjectMethod>) {
+      // isTopLevelMethod -> Component({ m(){} })
+      const isTopLevelMethod = Boolean(
+        t.isProgram(path?.parentPath?.parentPath?.parentPath?.parent)
+      );
       const parent = path.parentPath.parent;
       const name = (path.node.key as t.Identifier).name;
-      if (
-        parent &&
-        t.isCallExpression(parent) &&
-        (parent.callee as Identifier).name === "Component"
-      ) {
-        switch (name) {
-          // LynxComponent
-          case "created":
-          case "detached":
-          case "attached":
-          case "ready":
-          case "moved":
-          case "error":
-            // TODO: LynxCard
-            // TODO: LynxComponentLifeTimes
-            // TODO: delete this from vue
-            // case "created":
-            // case "mounted":
-            // case "update":
-            // case "beforeDestroy":
-            // case "errorCaptured":
 
+      if (parent && t.isCallExpression(parent) && isTopLevelMethod) {
+        if ((parent.callee as Identifier).name === "Component") {
+          const LynxComponentCycle = [
+            "created",
+            "detached",
+            "attached",
+            "ready",
+            "moved",
+            "error",
+          ];
+          if (LynxComponentCycle.includes(name)) {
+            visitor.cycleMethodHandler(path);
+          } else {
             // Support following syntax:
-            // created() {...}
-            visitor.methodsHandler(path, true);
-            break;
-          default:
-            break;
+            // treat as a normal method
+            // { outerMethods () {} }
+            visitor.objectMethodHandler(path);
+          }
+        } else if ((parent.callee as Identifier).name === "Card") {
+          const LynxCardCycle = [
+            "onLoad",
+            "onShow",
+            "onHide",
+            "onReady",
+            "onDestroy",
+            "onFirstScreen",
+          ];
+          if (LynxCardCycle.includes(name)) {
+            visitor.cycleMethodHandler(path);
+          } else {
+            // Support following syntax:
+            // treat as a normal method
+            // { outerMethods () {} }
+            visitor.objectMethodHandler(path);
+          }
         }
       } else if (parent && t.isObjectProperty(parent)) {
         const parentName = (parent.key as t.Identifier).name;
@@ -127,13 +119,13 @@ export default function scriptIterator(script: string) {
           case "methods":
             // Support following syntax:
             // methods: { handleClick() {...} }
-            visitor.methodsHandler(path, false);
+            visitor.objectMethodHandler(path);
             break;
-          // case "computed":
-          //   // Support following syntax:
-          //   // computed: { reverseName() {...} }
-          //   visitor.computedHandler(path);
-          //   break;
+          case "computed":
+            // Support following syntax:
+            // computed: { reverseName() {...} }
+            visitor.computedHandler(path);
+            break;
           default:
             break;
         }
@@ -156,15 +148,6 @@ export default function scriptIterator(script: string) {
           default:
             break;
         }
-      }
-
-      if (
-        parent &&
-        t.isObjectProperty(parent) &&
-        (parent.key as Identifier).name === "methods"
-      ) {
-        // TODO: Support following syntax:
-        // methods: { onError: function () {} }
       }
     },
   });
