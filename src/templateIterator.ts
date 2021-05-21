@@ -15,7 +15,7 @@ export default function templateIterator(template: string): Template {
 
 
   if (errors.length > 0) {
-    console.log(errors)
+    console.log(JSON.stringify(errors,null,2))
     return errors.forEach((error: string) => {
       logger.log(`${error} ---vue-template-compiler: compile`, "error");
     });

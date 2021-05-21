@@ -1,7 +1,7 @@
-import { NodePath } from '@babel/traverse';
-import * as t from '@babel/types';
+import { NodePath } from "@babel/traverse";
+import * as t from "@babel/types";
 
-import { Script } from './utils/types';
+import { Script } from "./utils/types";
 
 /*
   Support following syntax:
@@ -13,66 +13,12 @@ import { Script } from './utils/types';
 
 function getThisIdentify(script: Script, key: string) {
   if (script.data[key]) {
-    return t.identifier('state');
+    return t.identifier("state");
   } else if (script.props[key]) {
-    return t.identifier('props');
+    return t.identifier("props");
   }
   return null;
 }
-
-const replaceThisExpression = {
-  //
-  // TODO:
-  // this.setData({name:'Tom'}) -> this.setState({name: 'Tom'})
-
-  // this.data.name -> this.state.name/this.props.name
-  // this.properties.name -> this.state.name/this.props.name
-
-  // const name = this.data.name -> const name = this.state.name/this.props.name
-  // const name = this.properties.name -> const name = this.state.name/this.props.name
-
-
-
-  ThisExpression(this: any, subpath: NodePath<t.ThisExpression>) {
-    if (subpath.parent && t.isMemberExpression(subpath.parent)) {
-      // Support following syntax:
-
-
-      // this.name = 'Tom' -> this.setState({name: 'Tom'})
-      if (
-        subpath.parentPath.parent &&
-        t.isAssignmentExpression(subpath.parentPath.parent) &&
-        subpath.parentPath.parent.left === subpath.parent &&
-        subpath.parentPath.parent.operator === '='
-      ) {
-        (subpath.parentPath.parentPath
-          .parent as t.ExpressionStatement).expression = t.callExpression(
-          t.memberExpression(t.thisExpression(), t.identifier('setState')),
-          [
-            t.objectExpression([
-              t.objectProperty(
-                subpath.parent.property,
-                subpath.parentPath.parent.right
-              )
-            ])
-          ]
-        );
-      } else {
-        // Support following syntax:
-        // const name = this.name -> const name = this.props.name / const name = this.state.name
-        const key = (subpath.parent.property as t.Identifier).name;
-        const identify = getThisIdentify(this.script, key);
-        if (identify) {
-          subpath.replaceWith(t.memberExpression(t.thisExpression(), identify));
-        }
-      }
-    }
-
-    // todo...
-    // such as const { name } = this -> this.props.name / this.state.name
-    subpath.stop();
-  }
-};
 
 export default function formatThisExpression(
   path: NodePath<t.ObjectMethod>,
@@ -82,11 +28,66 @@ export default function formatThisExpression(
   path.traverse(
     {
       enter(subpath: NodePath<any>) {
-        subpath.traverse(replaceThisExpression, { script });
+        subpath.traverse(
+          {
+            ThisExpression(this: any, subpath: NodePath<t.ThisExpression>) {
+              // here is -> this.xxx
+              if (subpath.parent && t.isMemberExpression(subpath.parent)) {
+                if (
+                  t.isIdentifier(subpath.parent.property) &&
+                  subpath.parent.property.name
+                ) {
+                  const thisPropertyName = subpath.parent.property.name;
+                  if (thisPropertyName === "setData") {
+                    // Support following syntax:
+                    // this.setData({name:'Tom'}) -> this.setState({name: 'Tom'})
+                    subpath.parent.property.name = "setState";
+                  } else if (
+                    subpath.parent.property.name === "data" ||
+                    subpath.parent.property.name === "properties"
+                  ) {
+                    let replacedName: string;
+                    if (subpath.parent.property.name === "data") {
+                      replacedName = "state";
+                    } else {
+                      replacedName = "props";
+                    }
+                    // Support following syntax:
+                    // Fix the problem of mixing usage of data and properties
+                    // this.data.name -> this.state.name/this.props.name
+                    // this.properties.name -> this.state.name/this.props.name
+                    if (
+                      t.isMemberExpression(subpath.parentPath.parent) &&
+                      t.isIdentifier(subpath.parentPath.parent.property) &&
+                      subpath.parentPath.parent.property.name
+                    ) {
+                      let name: string =
+                        subpath.parentPath.parent.property.name;
+                      if (script.data.hasOwnProperty(name)) {
+                        replacedName = "state";
+                      } else if (script.props.hasOwnProperty(name)) {
+                        replacedName = "props";
+                      }
+                    }
+
+                    // Support following syntax:
+                    // 这里不支持 data/properties 推断
+                    // const { speed } = this.properties -> const { speed } = this.props;
+                    // const { name } = this.data -> const { name } = this.state;
+                    subpath.parent.property.name = replacedName;
+                  }
+                }
+              }
+
+              subpath.stop();
+            },
+          },
+          { script }
+        );
         if (subpath.parentPath.parent === path.node) {
           block.push(subpath.node);
         }
-      }
+      },
     },
     { script, block }
   );

@@ -12,7 +12,7 @@ export default function reactTemplateBuilder(app: App) {
         this.state=STATE;
       }
       _styleStringToObject (styleInput) {
-        return styleInput.split(';').filter(i=>i&&i.trim()).reduce(function (ruleMap, ruleString) {
+        return (styleInput||'').split(';').filter(i=>i&&i.trim()).reduce(function (ruleMap, ruleString) {
           const rulePair = ruleString.split(':');
           ruleMap[rulePair[0].trim()] = rulePair[1].trim();
           return ruleMap;

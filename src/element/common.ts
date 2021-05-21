@@ -8,7 +8,6 @@ export function genCommonElement(
   vnode: anyObject,
   attrsCollector: Readonly<Set<string>>
 ) {
-
   // Element
   // 1 搜集元素属性；一种是表达式，一种是字面量
   let styleAttrs: t.JSXAttribute[] = [];

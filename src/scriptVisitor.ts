@@ -147,17 +147,25 @@ export default class ScriptVisitor {
                     // Support following syntax:
                     // title: {type: String}
                     this.prop.type = node.value.name.toLowerCase();
-                    this.prop.typeValue = node.value.name.toLowerCase();
+                    this.prop.typeValue = this.prop.type;
+
+                    // for -> PropTypes.bool
+                    if (this.prop.typeValue === "boolean") {
+                      this.prop.typeValue = "bool";
+                    }
                   } else if (t.isArrayExpression(node.value)) {
                     // Support following syntax:
                     // title: {type: [String, Number]}
-                    const types = node.value.elements.map((element) =>
-                      (element as t.Identifier).name.toLowerCase()
-                    );
+                    const types = node.value.elements
+                      .map((element) =>
+                        (element as t.Identifier).name.toLowerCase()
+                      )
+                      .map((i) => (i === "boolean" ? "bool" : i));
 
                     this.prop.type =
                       types.length > 1 ? "typesOfArray" : types[0];
                     this.prop.typeValue = types.length > 1 ? types : types[0];
+
                   } else {
                     logger.log(
                       `The type in ${this.key} prop only supports identifier or array expression, eg: Boolean, [String]`,
