@@ -149,12 +149,22 @@ export function genCommonElement(
               }
             });
 
-            // add
+            const l = getCollectedProperty(constValue);
+            let jSXAttributeValue:
+              | t.JSXElement
+              | t.StringLiteral
+              | t.JSXExpressionContainer;
+
+            if (t.isStringLiteral(l)) {
+              // class="xxx" -> className="xxx"
+              jSXAttributeValue = l;
+            } else {
+              // class="{{xxx}}_123" -> className={xxx+'_123'}
+              jSXAttributeValue = t.jSXExpressionContainer(l);
+            }
+
             classAttrs.push(
-              t.jSXAttribute(
-                t.jSXIdentifier("className"),
-                t.jSXExpressionContainer(getCollectedProperty(constValue))
-              )
+              t.jSXAttribute(t.jSXIdentifier("className"), jSXAttributeValue)
             );
           }
           break;
@@ -235,11 +245,22 @@ export function genCommonElement(
               }),
               false
             );
+
+            let jSXAttributeValue:
+              | t.JSXElement
+              | t.StringLiteral
+              | t.JSXExpressionContainer;
+
+            if (t.isStringLiteral(attrValue)) {
+              // id="xxx" -> id="xxx"
+              jSXAttributeValue = attrValue;
+            } else {
+              // id="{{xxx}}_123" -> id={xxx+'_123'}
+              jSXAttributeValue = t.jSXExpressionContainer(attrValue);
+            }
+
             commonAttrs.push(
-              t.jSXAttribute(
-                t.jSXIdentifier(attrKey),
-                t.jSXExpressionContainer(attrValue)
-              )
+              t.jSXAttribute(t.jSXIdentifier(attrKey), jSXAttributeValue)
             );
           }
 

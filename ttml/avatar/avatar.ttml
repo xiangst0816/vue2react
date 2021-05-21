@@ -1,25 +1,2 @@
-<view class="{{name}}"
-      style="{{bgStyle}};{{show ? ';opacity:1;' : ';opacity:0;'}}"
->
-    <view id="wrap" class="{{name}}__wrap" style="{{wrapStyle}}" tt:if="{{direction==='left' || direction==='right'}}">
-        <text id="content" class="{{name}}__content" style="{{textStyle}};opacity:0;{{direction === 'left' ? 'padding-right:' + hspace + 'px' : 'padding-left:' + hspace + 'px'}};">{{text}}</text>
-        <text tt:for="{{list}}"
-              class="{{name}}__content"
-              data-id="{{item.id}}"
-              bindtransitionend="handleTransitionEnd"
-              style="{{direction === 'left' ? 'padding-right:' + hspace + 'px' : 'padding-left:' + hspace + 'px'}};{{item.animateStyle}};{{textStyle}};">
-            {{item.text}}
-        </text>
-    </view>
-
-    <view id="wrap" class="{{name}}__wrap {{name}}__wrap-vertical" style="{{wrapStyle}}" tt:else>
-        <text id="content" class="{{name}}__content {{name}}__content-vertical" style="{{textStyle}};opacity:0;">{{text}}</text>
-        <text tt:for="{{list}}"
-              class="{{name}}__content {{name}}__content-vertical"
-              data-id="{{item.id}}"
-              bindtransitionend="handleTransitionEnd"
-              style="{{item.animateStyle}};{{textStyle}};">
-            {{item.text}}
-        </text>
-    </view>
-</view>
+<view id="color:red;"></view>
+<view id="{{aa}}_123"></view>
