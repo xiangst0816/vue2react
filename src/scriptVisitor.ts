@@ -121,7 +121,7 @@ export default class ScriptVisitor {
         // or
         // title: {type: String, value: "title"}
         // or
-        // title: {type: [String, Number], default: "title"}
+        // title: {type: [String, Number], value: "title"}
         this.script.props[key] = {
           type: "",
           typeValue: "",

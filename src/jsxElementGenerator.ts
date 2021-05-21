@@ -105,7 +105,7 @@ export default function jsxElementGenerator(
                 break;
               case "for-item":
               case "for-index":
-                // 在 for 分支已处理
+                // Processed in the 'for' branch
                 break;
               default:
                 debugger;
@@ -144,6 +144,7 @@ export default function jsxElementGenerator(
     parentElement.children.push(wrappedElement);
   }
 
+  // TODO: 需要断点看看这里少处理了哪些 tag
   // if (!wrappedElement) {
   //   throw new Error("check");
   // }

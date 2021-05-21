@@ -21,9 +21,23 @@ function getThisIdentify(script: Script, key: string) {
 }
 
 const replaceThisExpression = {
+  //
+  // TODO:
+  // this.setData({name:'Tom'}) -> this.setState({name: 'Tom'})
+
+  // this.data.name -> this.state.name/this.props.name
+  // this.properties.name -> this.state.name/this.props.name
+
+  // const name = this.data.name -> const name = this.state.name/this.props.name
+  // const name = this.properties.name -> const name = this.state.name/this.props.name
+
+
+
   ThisExpression(this: any, subpath: NodePath<t.ThisExpression>) {
     if (subpath.parent && t.isMemberExpression(subpath.parent)) {
       // Support following syntax:
+
+
       // this.name = 'Tom' -> this.setState({name: 'Tom'})
       if (
         subpath.parentPath.parent &&
@@ -45,7 +59,7 @@ const replaceThisExpression = {
         );
       } else {
         // Support following syntax:
-        // const name = this.name -> cosnt name = this.props.name / const name = this.state.name
+        // const name = this.name -> const name = this.props.name / const name = this.state.name
         const key = (subpath.parent.property as t.Identifier).name;
         const identify = getThisIdentify(this.script, key);
         if (identify) {

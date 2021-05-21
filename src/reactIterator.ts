@@ -16,6 +16,8 @@ export default function reactIterator(
       visitor.genImports(path, hasStyle);
     },
 
+    // TODO：全局变量，这个检查下
+
     ClassBody(path: NodePath<t.ClassBody>) {
       visitor.genStaticProps(path);
       visitor.genClassMethods(path);

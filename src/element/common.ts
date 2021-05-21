@@ -86,8 +86,7 @@ export function genCommonElement(
                   styleDeclaration.property[0]
                 ) {
                   // Support following syntax:
-                  // TODO: 实现 styleStringToObject 函数
-                  // <view style=";{{customStyleString}};"/> -> <view style={{...this.styleStringToObject(customStyleString)}}/>
+                  // <view style=";{{customStyleString}};"/> -> <view style={{...this._styleStringToObject(customStyleString)}}/>
                   const text = styleDeclaration.property[0].text;
                   attrsCollector.add(text);
                   objectProperties.push(
@@ -95,7 +94,7 @@ export function genCommonElement(
                       t.callExpression(
                         t.memberExpression(
                           t.thisExpression(),
-                          t.identifier("styleStringToObject")
+                          t.identifier("_styleStringToObject")
                         ),
                         [t.identifier(text)]
                       )

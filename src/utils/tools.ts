@@ -107,11 +107,9 @@ export function genDefaultProps(props: { [name: string]: any }) {
 }
 
 export function formatComponentName(name: string): string {
+
   return name
-    ? name
-        .split("-")
-        .map((item) => item[0].toUpperCase() + item.substr(1))
-        .join("")
+    ? _.upperFirst(_.camelCase(name))
     : "ReactComponent";
 }
 

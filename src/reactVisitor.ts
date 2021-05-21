@@ -1,8 +1,12 @@
-import  { NodePath } from "@babel/traverse";
+import { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { App } from "./utils/types";
-import { genPropTypes, genDefaultProps,getIdentifierFromTexts } from "./utils/tools";
+import {
+  genPropTypes,
+  genDefaultProps,
+  getIdentifierFromTexts,
+} from "./utils/tools";
 
 export default class ReactVisitor {
   app: App;
@@ -32,13 +36,45 @@ export default class ReactVisitor {
       path.node.body.unshift(importPropTypes);
     }
 
-    // add 'import React, { Component } from "react";'
+    // add 'import { Text } from '@byted-lynx/react-components';'
+    const components = [
+      "View",
+      "Image",
+      "Text",
+      "Input",
+      "WebcastInput",
+      "WebcastInputView",
+      "ScrollView",
+      "Swiper",
+      "SwiperItem",
+      "Picker",
+      "InlineImage",
+      "FilterImage",
+      "InlineText",
+      "Textarea",
+      "List",
+      "Header",
+      "Footer",
+      "SVG",
+    ];
+    const importReactComponent = t.importDeclaration(
+      components.map((componentName) =>
+        t.importSpecifier(
+          t.identifier(componentName),
+          t.identifier(componentName)
+        )
+      ),
+      t.stringLiteral("@byted-lynx/react-components")
+    );
+    path.node.body.unshift(importReactComponent);
+
+    // add 'import ReactLynx, { Component } from '@byted-lynx/react-runtime';'
     const importReact = t.importDeclaration(
       [
-        t.importDefaultSpecifier(t.identifier("React")),
+        t.importDefaultSpecifier(t.identifier("ReactLynx")),
         t.importSpecifier(t.identifier("Component"), t.identifier("Component")),
       ],
-      t.stringLiteral("react")
+      t.stringLiteral("@byted-lynx/react-runtime")
     );
     path.node.body.unshift(importReact);
   }

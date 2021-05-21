@@ -146,7 +146,8 @@ export default function scriptIterator(script: string) {
       if (
         parent &&
         t.isCallExpression(parent) &&
-        (parent.callee as Identifier).name === "Component"
+        ((parent.callee as Identifier).name === "Component" ||
+          (parent.callee as Identifier).name === "Card")
       ) {
         switch (name) {
           case "name":

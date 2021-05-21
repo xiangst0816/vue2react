@@ -11,12 +11,13 @@ export default function reactTemplateBuilder(app: App) {
         super(props);
         this.state=STATE;
       }
-       styleStringToObject () {
-          // TODO: 待完成
-          return {
-            "todo":"待完成"
-          }
-       }
+      _styleStringToObject (styleInput) {
+        return styleInput.split(';').filter(i=>i&&i.trim()).reduce(function (ruleMap, ruleString) {
+          const rulePair = ruleString.split(':');
+          ruleMap[rulePair[0].trim()] = rulePair[1].trim();
+          return ruleMap;
+        }, {});         
+      }
     }
   `;
 
