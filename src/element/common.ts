@@ -235,6 +235,11 @@ export function genCommonElement(
                   return t.identifier(node.text);
                 } else if (node.type === NodeType.Text) {
                   // Text
+                  // Support following syntax:
+                  // <text implicit-animation="false" /> -> <Text implicitAnimation={false} />
+                  if (node.text === "false" || node.text === "true") {
+                    return t.identifier(node.text);
+                  }
                   return t.stringLiteral(node.text);
                 } else if (node.type === NodeType.WhiteSpace) {
                   // WhiteSpace

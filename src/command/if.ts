@@ -1,30 +1,51 @@
-import {getCollectedProperty} from "../utils/generatorUtils";
-import {anyObject, NodeType} from "../utils/types";
+import { getCollectedProperty } from "../utils/generatorUtils";
+import { anyObject, NodeType } from "../utils/types";
 import * as t from "@babel/types";
 
-export function wrapIfCommand (command:anyObject, element:t.JSXElement,attrsCollector: Readonly<Set<string>> ) {
+export function wrapIfCommand(
+  command: anyObject,
+  element: t.JSXElement,
+  attrsCollector: Readonly<Set<string>>
+) {
+  // Support following syntax:
+  // <div tt:if="show"/> -> {show ? <div/> : null}
+  const test = getCollectedProperty(
+    (command.children || []).map((node: anyObject) => {
+      if (node.type === NodeType.Mustache) {
+        // Mustache
+        attrsCollector.add(node.text);
+        return t.identifier(node.text);
+      } else if (node.type === NodeType.Text) {
+        // Text
+        return t.stringLiteral(node.text);
+      } else if (node.type === NodeType.WhiteSpace) {
+        // WhiteSpace
+        return t.stringLiteral(" ");
+      }
+
+      debugger;
+      return "";
+    })
+  );
+
+  if (
+    t.isJSXExpressionContainer(element as any) &&
+    t.isMemberExpression(
+      ((element as any) as t.JSXExpressionContainer).expression
+    )
+  ) {
     // Support following syntax:
-    // <div tt:if="show"/> -> {show ? <div/> : null}
-    const test = getCollectedProperty(
-        (command.children || []).map((node: anyObject) => {
-            if (node.type === NodeType.Mustache) {
-                // Mustache
-                attrsCollector.add(node.text);
-                return t.identifier(node.text);
-            } else if (node.type === NodeType.Text) {
-                // Text
-                return t.stringLiteral(node.text);
-            } else if (node.type === NodeType.WhiteSpace) {
-                // WhiteSpace
-                return t.stringLiteral(" ");
-            }
-
-            debugger;
-            return "";
-        })
-    );
-
+    // { this.renderTemplate } -> { test ? this.renderTemplate : null }
     return t.jSXExpressionContainer(
-        t.conditionalExpression(test, element, t.nullLiteral())
+      t.conditionalExpression(
+        test,
+        ((element as any) as t.JSXExpressionContainer).expression,
+        t.nullLiteral()
+      )
     );
+  }
+
+  return t.jSXExpressionContainer(
+    t.conditionalExpression(test, element, t.nullLiteral())
+  );
 }

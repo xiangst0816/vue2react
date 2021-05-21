@@ -1,2 +1,1 @@
-<view id="color:red;"></view>
-<view id="{{aa}}_123"></view>
+<view binderror="onError"></view>
