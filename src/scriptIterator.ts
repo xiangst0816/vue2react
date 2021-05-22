@@ -16,6 +16,7 @@ export default function scriptIterator(script: string) {
   // TODO: { onError: () => {}} -> { onError () {} }
   // fix method write way
   // { onError: function () {} } -> { onError () {} }
+  // { onError: () => {} } -> { onError () {} }
   traverse(vast, {
     ObjectProperty(path: NodePath<t.ObjectProperty>) {
       const name = (path.node.key as t.Identifier).name;
@@ -26,6 +27,15 @@ export default function scriptIterator(script: string) {
         path.replaceWith(
           t.objectMethod("method", t.identifier(name), params, body)
         );
+      } else if (t.isArrowFunctionExpression(path.node.value)) {
+        const params = path.node.value.params;
+        const body = path.node.value.body;
+
+        if (t.isBlockStatement(body)) {
+          path.replaceWith(
+            t.objectMethod("method", t.identifier(name), params, body)
+          );
+        }
       }
     },
   });
