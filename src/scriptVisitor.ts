@@ -83,11 +83,6 @@ export default class ScriptVisitor {
     this.script.methods[name] = classMethod;
   }
 
-  // objectPropertyMethodHandler(path: NodePath<t.ObjectProperty>) {
-  //   // 123
-  //   path;
-  // }
-
   computedHandler(path: NodePath<t.ObjectMethod>) {
     const blockStatement = formatThisExpression(path, this.script);
     this.script.computed[(path.node.key as t.Identifier).name] = t.classMethod(

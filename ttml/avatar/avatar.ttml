@@ -1,1 +1,15 @@
-<view binderror="onError"></view>
+<!-- template -->
+<template name="odd">
+    <text id="1">odd {{item.a.c.d}} {{index}}</text>
+    <text id="1">odd {{item.c}} {{index}}</text>
+</template>
+<template name="even">
+    <text class="2">even {{item}} {{index}}</text>
+</template>
+<block tt:for="{{[1, 2, 3, 4, 5]}}">
+    <template is="even" data="{{item,index}}"/>
+    <template is="odd" data="{{...item}}"/>
+</block>
+<block tt:for="{{[1, 2, 3, 4, 5]}}">
+    <template is="{{item % 2 == 0 && 'even' || 'odd'}}" data="{{item,index}}"/>
+</block>

@@ -1,6 +1,7 @@
 import { getCollectedProperty } from "../utils/generatorUtils";
 import { anyObject, NodeType } from "../utils/types";
 import * as t from "@babel/types";
+import {transformTextToExpression} from "../utils/tools";
 
 export function wrapForCommand(
   command: anyObject,
@@ -12,8 +13,11 @@ export function wrapForCommand(
     (command.children || []).map((node: anyObject) => {
       if (node.type === NodeType.Mustache) {
         // Mustache
-        attrsCollector.add(node.text);
-        return t.identifier(node.text);
+        const { identifiers, expression } = transformTextToExpression(
+            node.text
+        );
+        identifiers.forEach((i) => attrsCollector.add(i));
+        return expression;
       } else if (node.type === NodeType.Text) {
         // Text
         return t.stringLiteral(node.text);

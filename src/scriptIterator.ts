@@ -13,6 +13,7 @@ export default function scriptIterator(script: string) {
 
   const visitor = new ScriptVisitor();
 
+  // TODO: { onError: () => {}} -> { onError () {} }
   // fix method write way
   // { onError: function () {} } -> { onError () {} }
   traverse(vast, {

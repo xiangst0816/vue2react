@@ -3,6 +3,7 @@ import * as t from "@babel/types";
 import { getCollectedProperty } from "../utils/generatorUtils";
 import { lynxEventReMap } from "../utils/eventMap";
 import _ from "lodash";
+import { transformTextToExpression } from "../utils/tools";
 
 export function genCommonElement(
   vnode: anyObject,
@@ -37,8 +38,12 @@ export function genCommonElement(
                     styleDeclaration.property.map((node: anyObject) => {
                       if (node.type === NodeType.Mustache) {
                         // Mustache
-                        attrsCollector.add(node.text);
-                        return t.identifier(node.text);
+                        const {
+                          identifiers,
+                          expression,
+                        } = transformTextToExpression(node.text);
+                        identifiers.forEach((i) => attrsCollector.add(i));
+                        return expression;
                       } else if (node.type === NodeType.Text) {
                         // Text
                         return t.stringLiteral(node.text);
@@ -57,8 +62,12 @@ export function genCommonElement(
                     styleDeclaration.value.map((node: anyObject) => {
                       if (node.type === NodeType.Mustache) {
                         // Mustache
-                        attrsCollector.add(node.text);
-                        return t.identifier(node.text);
+                        const {
+                          identifiers,
+                          expression,
+                        } = transformTextToExpression(node.text);
+                        identifiers.forEach((i) => attrsCollector.add(i));
+                        return expression;
                       } else if (node.type === NodeType.Text) {
                         // Text
                         return t.stringLiteral(node.text);
@@ -87,7 +96,10 @@ export function genCommonElement(
                   // Support following syntax:
                   // <view style=";{{customStyleString}};"/> -> <view style={{...this._styleStringToObject(customStyleString)}}/>
                   const text = styleDeclaration.property[0].text;
-                  attrsCollector.add(text);
+                  const { identifiers, expression } = transformTextToExpression(
+                    text
+                  );
+                  identifiers.forEach((i) => attrsCollector.add(i));
                   objectProperties.push(
                     t.spreadElement(
                       t.callExpression(
@@ -95,7 +107,7 @@ export function genCommonElement(
                           t.thisExpression(),
                           t.identifier("_styleStringToObject")
                         ),
-                        [t.identifier(text)]
+                        [expression]
                       )
                     )
                   );
@@ -120,7 +132,11 @@ export function genCommonElement(
           // ClassAttribute
           const classNames = attr.children;
           if (classNames && classNames.length > 0) {
-            const constValue: (t.StringLiteral | t.Identifier)[] = [];
+            const constValue: (
+              | t.StringLiteral
+              | t.Identifier
+              | t.Expression
+            )[] = [];
             classNames.forEach((className: anyObject) => {
               if (className.type === NodeType.ClassName) {
                 // className
@@ -132,8 +148,12 @@ export function genCommonElement(
                       constValue.push(t.stringLiteral(node.text));
                     } else if (node.type === NodeType.Mustache) {
                       // Mustache
-                      attrsCollector.add(node.text);
-                      constValue.push(t.identifier(node.text));
+                      const {
+                        identifiers,
+                        expression,
+                      } = transformTextToExpression(node.text);
+                      identifiers.forEach((i) => attrsCollector.add(i));
+                      constValue.push(expression);
                     } else {
                       // 当前 case 不支持；
                       debugger;
@@ -171,11 +191,7 @@ export function genCommonElement(
         case NodeType.Attribute:
           // Attribute = normal + event
           let attrKey: string | undefined;
-          let attrValue:
-            | t.Literal
-            | t.Identifier
-            | t.BinaryExpression
-            | undefined;
+          let attrValue: t.Expression | undefined;
           const name = attr.name;
 
           if (/^bind/.test(name) || /^catch/.test(name)) {
@@ -199,18 +215,19 @@ export function genCommonElement(
                 // Support following syntax:
                 // <div bindchange="changeHandler"/> -> <div onChange={changeHandler}/>
                 const node = attr.children[0];
-                // Mark: 事件这里的 text 表示一个标识符
+                // Mark: 事件这里的 text 表示一个标识符, 不支持动态模式
                 attrsCollector.add(node.text);
                 attrValue = t.identifier(node.text);
               } else {
-                // TODO: 可能是下面的写法, 不支持
-                // <text bindtouchstart="{{onTouchStart}}">bindtouchstart:onError</text>
-                debugger;
+                throw new Error(
+                  `请检查这个事件名称对应的 Handler：${name}，当前解析不支持这类写法 <text bindtouchstart="{{onTouchStart}}">msg</text>`
+                );
               }
             } else if (/^catch/.test(name)) {
               // TODO: 事件 map 未填写
               // http://lynx.bytedance.net/docs/reactlynx/grammar/event
               debugger;
+              console.log(`当前事件模式不支持：${name}, 跳过处理`);
             }
             if (attrKey && attrValue) {
               eventAttrs.push(
@@ -231,8 +248,11 @@ export function genCommonElement(
               attr.children.map((node: anyObject) => {
                 if (node.type === NodeType.Mustache) {
                   // Mustache
-                  attrsCollector.add(node.text);
-                  return t.identifier(node.text);
+                  const { identifiers, expression } = transformTextToExpression(
+                    node.text
+                  );
+                  identifiers.forEach((i) => attrsCollector.add(i));
+                  return expression;
                 } else if (node.type === NodeType.Text) {
                   // Text
                   // Support following syntax:

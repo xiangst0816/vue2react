@@ -6,14 +6,14 @@ import _ from "lodash";
 // Life-cycle methods relations mapping
 export const cycle: { [name: string]: any } = {
   // Component 部分
-  created: "componentCreated", // * 需要在 constructor 写明 this.componentCreated()
-  attached: "componentAttached", // * 需要在 constructor 写明 this.componentAttached()，created 之后调用
+  created: "componentCreated", // * TODO 需要在 constructor 写明 this.componentCreated()
+  attached: "componentAttached", // * TODO 需要在 constructor 写明 this.componentAttached()，created 之后调用
   ready: "componentDidMount",
   detached: "componentWillUnmount",
   error: "componentDidCatch",
   moved: "componentMoved", // 没有对等实现
   // Card 部分
-  // TODO: 待定
+  // TODO: 处理 Card 的映射关系
 
   // created: 'componentWillMount',
   // mounted: 'componentDidMount',
@@ -117,24 +117,75 @@ export function formatComponentName(name: string): string {
   return name ? _.upperFirst(_.camelCase(name)) : "ReactComponent";
 }
 
-export function getIdentifierFromTexts(attrs: string[]): string[] {
-  const list: string[] = [];
-  // Notice: '25 * index', 'value1 + value2' 这里的 attr 拆分出来真正的变量
-  attrs.forEach((attr) => {
-    const ast = parser.parse(attr);
-    traverse(ast, {
-      Identifier(path) {
-        if (!list.includes(path.node.name)) {
-          list.push(path.node.name);
-        }
-      },
-    });
+export function genObjectExpressionFromObject(
+  obj: Record<any, any>
+): t.ObjectExpression {
+  const objAst = parser.parse(`var _=${JSON.stringify(obj)}`, {
+    sourceType: "module",
   });
 
-  return list;
+  if (
+    t.isVariableDeclaration(objAst.program.body[0]) &&
+    t.isVariableDeclarator(objAst.program.body[0].declarations[0]) &&
+    t.isObjectExpression(objAst.program.body[0].declarations[0].init)
+  ) {
+    return objAst.program.body[0].declarations[0].init;
+  }
+
+  return t.objectExpression([t.objectProperty()]);
 }
 
-//  <template name="xxx"> -> this.renderXxxTemplateComponent
+// export function getIdentifierFromTexts(attrs: string[]): string[] {
+//   console.log("！！！检查这里是否有未检出的 关键字");
+//   console.log(attrs);
+//   const list: string[] = [];
+//   // Notice: '25 * index', 'value1 + value2' 这里的 attr 拆分出来真正的变量
+//   attrs.forEach((attr) => {
+//     const ast = parser.parse(attr);
+//     traverse(ast, {
+//       Identifier(path) {
+//         if (!list.includes(path.node.name)) {
+//           list.push(path.node.name);
+//         }
+//       },
+//     });
+//   });
+//
+//   return list;
+// }
+
+// <template name="xxx"> -> this.renderXxxTemplateComponent
 export function getTemplateComponentName(text: string) {
   return _.camelCase(`render-${text}-template-component`);
+}
+
+// 'a.b(c) + cc' -> {identifiers:['a','cc'],expression:ast}
+export function transformTextToExpression(text: string) {
+  const ast = parser.parse(text);
+  const identifiers: string[] = [];
+  let expression: t.Expression = t.identifier(text);
+  traverse(ast, {
+    Identifier(path) {
+      if (!identifiers.includes(path.node.name)) {
+        if (
+          t.isMemberExpression(path.parent) &&
+          path.parent.object === path.node
+        ) {
+          // item.a, item.a.d -> [item]
+          identifiers.push(path.node.name);
+        } else if (
+          // index -> [index]
+          t.isExpressionStatement(path.parent) &&
+          path.parent.expression === path.node
+        ) {
+          identifiers.push(path.node.name);
+        }
+      }
+    },
+  });
+  if (t.isExpressionStatement(ast.program.body[0])) {
+    expression = ast.program.body[0].expression;
+  }
+
+  return { identifiers, expression };
 }

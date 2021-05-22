@@ -1,3 +1,5 @@
+import lepusIterator from "./lepusIterator";
+
 const compiler = require("vue-template-compiler");
 
 import fs from "fs";
@@ -11,7 +13,10 @@ import reactTemplateBuilder from "./reactTemplateBuilder";
 import formatCode from "./utils/formatCode";
 import logger from "./utils/logUtil";
 import { anyObject } from "./utils/types";
+import configIterator from "./configIterator";
 
+export { default as configIterator } from "./configIterator";
+export { default as lepusIterator } from "./lepusIterator";
 export { default as reactIterator } from "./reactIterator";
 export { default as scriptIterator } from "./scriptIterator";
 export { default as templateIterator } from "./templateIterator";
@@ -45,16 +50,26 @@ export function transformCode(sourceCode: string) {
 
     const hasStyle = styles.length > 0;
 
+    const preConfig = "";
+    const root = ""; // 组件位置
+
+    // iterator 搜集数据
     const script = scriptIterator(preScript);
     const template = templateIterator(preTemplate);
+    const lepus = lepusIterator(preConfig, root);
+    const config = configIterator(preConfig);
 
     const app = {
       script,
       template,
+      lepus,
+      config,
     };
 
+    // react 模板相关
     const rast = reactTemplateBuilder(app);
 
+    // collect-data + react-template => react-ast
     const targetAst = reactIterator(rast, app, hasStyle);
     const targetCode = generate(targetAst).code;
 

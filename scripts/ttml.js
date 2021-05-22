@@ -2,6 +2,8 @@ const generate = require("@babel/generator").default;
 const path = require("path");
 const fs = require("fs");
 const {
+  configIterator,
+  lepusIterator,
   scriptIterator,
   templateIterator,
   reactTemplateBuilder,
@@ -15,41 +17,42 @@ const baseDir = path.resolve(__dirname, `../ttml/${name}`);
 const scriptPath = path.resolve(baseDir, `${name}.js`);
 const stylePath = path.resolve(baseDir, `${name}.ttss`);
 const templatePath = path.resolve(baseDir, `${name}.ttml`);
-const lepusPath = path.resolve(baseDir, `${name}.lepus`);
 const configPath = path.resolve(baseDir, `${name}.json`);
 
 function getCode(codePath) {
   return fs.readFileSync(codePath, "utf8");
 }
 
-function transformCode(
-  templateCode,
-  scriptCode,
-  styleCode,
-  lepusCode,
-  configCode
-) {
+function transformCode(templateCode, scriptCode, styleCode, configCode) {
   // script
   const script = scriptIterator(scriptCode);
-  script.name = "avatar";
+  script.name = "avatar"; // todo 外部传入会这读文件名
   // console.log(script);
 
   // template
   const template = templateIterator(templateCode);
   // console.log(template);
-
+  const lepus = lepusIterator(configCode, baseDir);
+  const config = configIterator(configCode);
   const app = {
     script,
     template,
+    lepus,
+    config,
   };
+
+  // react 模板相关
 
   const rast = reactTemplateBuilder(app);
   const hasStyle = false;
+
+  // collect-data + react-template => react-ast
   const targetAst = reactIterator(rast, app, hasStyle);
+
   const targetCode = generate(targetAst).code;
 
-  const reactCode = targetCode
-  // const reactCode = formatCode(targetCode, "react");
+  // const reactCode = targetCode
+  const reactCode = formatCode(targetCode, "react");
 
   // console.log("reactCode");
   // console.log(reactCode);
@@ -62,14 +65,12 @@ const [script, styles] = transformCode(
   getCode(templatePath),
   getCode(scriptPath),
   getCode(stylePath),
-  getCode(lepusPath),
   getCode(configPath)
 );
 
 if (!fs.existsSync(distDir)) {
   fs.mkdirSync(distDir);
 }
-
 
 fs.writeFileSync(path.resolve(distDir, `${name}.js`), script);
 

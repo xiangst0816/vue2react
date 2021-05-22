@@ -37,7 +37,12 @@ export function genRootElement(
     console.log("[root] ReactLynx 不支持多个根节点，这里会包裹一层 View");
     (vnode.children || []).forEach((child: anyObject) => {
       // wrappedElement 对外， element 是内部的东西，看下要往 element 中塞入 children
-      jsxElementGenerator(child, element, attrsCollector, templateCollector);
+      jsxElementGenerator(
+        child,
+        element,
+        attrsCollector,
+        templateCollector,
+      );
     });
   }
 

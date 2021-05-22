@@ -1,18 +1,62 @@
 import { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
-
-import { App } from "./utils/types";
+import { App, Lepus } from "./utils/types";
 import {
   genPropTypes,
   genDefaultProps,
-  getIdentifierFromTexts,
+  genObjectExpressionFromObject,
+  // getIdentifierFromTexts,
 } from "./utils/tools";
+
+const ReactComponents = [
+  "View",
+  "Image",
+  "Text",
+  "Input",
+  "WebcastInput",
+  "WebcastInputView",
+  "ScrollView",
+  "Swiper",
+  "SwiperItem",
+  "Picker",
+  "InlineImage",
+  "FilterImage",
+  "InlineText",
+  "Textarea",
+  "List",
+  "Header",
+  "Footer",
+  "SVG",
+];
 
 export default class ReactVisitor {
   app: App;
 
   constructor(app: any) {
     this.app = app;
+  }
+
+  genLepusImports(path: NodePath<t.Program>, lepusImports: Lepus[]) {
+    // add import { handleText } from './test.lepus';
+    // add import { handleText1, handleText2 } from './test2.lepus';
+    lepusImports.forEach((lepusImport) => {
+      const importSpecifiers: string[][] = lepusImport.specifiers || [];
+      const sourceString = lepusImport.path;
+
+      if (sourceString && importSpecifiers.length > 0) {
+        const importReactComponent = t.importDeclaration(
+          importSpecifiers
+            .map((specifier: string[]) => {
+              let local: t.Identifier = t.identifier(specifier[0]);
+              let imported: t.Identifier = t.identifier(specifier[1]);
+              return t.importSpecifier(local, imported);
+            })
+            .filter((i: any) => Boolean(i)),
+          t.stringLiteral(sourceString)
+        );
+        path.node.body.unshift(importReactComponent);
+      }
+    });
   }
 
   genImports(path: NodePath<t.Program>, hasStyle: boolean) {
@@ -37,28 +81,9 @@ export default class ReactVisitor {
     }
 
     // add 'import { Text } from '@byted-lynx/react-components';'
-    const components = [
-      "View",
-      "Image",
-      "Text",
-      "Input",
-      "WebcastInput",
-      "WebcastInputView",
-      "ScrollView",
-      "Swiper",
-      "SwiperItem",
-      "Picker",
-      "InlineImage",
-      "FilterImage",
-      "InlineText",
-      "Textarea",
-      "List",
-      "Header",
-      "Footer",
-      "SVG",
-    ];
+
     const importReactComponent = t.importDeclaration(
-      components.map((componentName) =>
+      ReactComponents.map((componentName) =>
         t.importSpecifier(
           t.identifier(componentName),
           t.identifier(componentName)
@@ -110,9 +135,10 @@ export default class ReactVisitor {
     let methodProperties: t.ObjectProperty[] = [];
     let computed: string[] = [];
 
-    const attrsCollector = getIdentifierFromTexts([
-      ...(this.app.template.attrsCollector as Set<string>),
-    ]);
+    const attrsCollector = this.app.template.attrsCollector;
+
+    console.log("template 中搜集的全部变量");
+    console.log(attrsCollector);
 
     attrsCollector.forEach((attr) => {
       if (this.app.script.data[attr]) {
@@ -128,7 +154,10 @@ export default class ReactVisitor {
           t.objectProperty(t.identifier(attr), t.identifier(attr), false, true)
         );
       } else {
-        console.log(`属性映射未识别，原样输出 ->`, attr);
+        console.log(
+          `属性映射未识别，原样输出（也许是在 template 中的变量） ->`,
+          attr
+        );
       }
       // else if (this.app.script.computed[attr]) {
       //   computed.push(attr);
@@ -198,7 +227,33 @@ export default class ReactVisitor {
     path.node.body.push(render);
   }
 
-  // genTemplateComponent(path: NodePath<t.ClassBody>){
-  //
-  // }
+  genConfigProperty(path: NodePath<t.ClassBody>) {
+    const config = this.app.config;
+    const objectExpression = genObjectExpressionFromObject(config || {});
+    path.node.body.push(
+      t.classProperty(t.identifier("config"), objectExpression)
+    );
+  }
+
+  remapLepusMemberExpression(path: NodePath<t.MemberExpression>) {
+    const lepusNames = this.app.lepus.map((i) => i.name) || [];
+    // Support following syntax:
+    // lepus template replace
+    // <View style={{ ...this._styleStringToObject(_styleFn.sizeStyle(size)) }} >
+    //   <Text>{_styleFn.sizeStyle(size)}</Text>
+    // </View>
+    // ->
+    // <View style={{ ...this._styleStringToObject(sizeStyle(size)) }} >
+    //   <Text>{sizeStyle(size)}</Text>
+    // </View>
+    if (
+      t.isIdentifier(path.node.object) &&
+      lepusNames.includes(path.node.object.name) &&
+      t.isCallExpression(path.parent) &&
+      t.isMemberExpression(path.parent.callee)
+    ) {
+      // is lepus identifier
+      path.parent.callee = path.parent.callee.property;
+    }
+  }
 }

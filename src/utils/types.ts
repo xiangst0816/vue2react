@@ -1,6 +1,7 @@
-import * as t from '@babel/types';
+import * as t from "@babel/types";
 
 export type anyObject = { [name: string]: any };
+
 export interface Script {
   name: string;
   data: anyObject;
@@ -8,7 +9,12 @@ export interface Script {
   methods: anyObject;
   computed: anyObject;
   imports: t.ImportDeclaration[];
-  // TODO: lepus config
+}
+
+export interface Lepus {
+  name: string; // _styleFn
+  specifiers: string[][]; // [[local,exported]]
+  path: string; // './test.lepus'
 }
 
 export interface Template {
@@ -20,6 +26,8 @@ export interface Template {
 export interface App {
   template: Template;
   script: Script;
+  lepus: Lepus[];
+  config: Record<string, any>; // index.js
 }
 
 export interface Log {

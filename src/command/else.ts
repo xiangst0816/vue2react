@@ -2,6 +2,7 @@ import * as t from "@babel/types";
 import { getCollectedProperty } from "../utils/generatorUtils";
 import { anyObject, NodeType } from "../utils/types";
 import jsxElementGenerator from "../jsxElementGenerator";
+import { transformTextToExpression } from "../utils/tools";
 
 export function injectElseCommand(
   command: anyObject,
@@ -9,7 +10,7 @@ export function injectElseCommand(
   element: t.JSXElement,
   parentElement: t.JSXElement | undefined,
   attrsCollector: Readonly<Set<string>>,
-  templateCollector: Readonly<Set<t.ClassMethod>>
+  templateCollector: Readonly<Set<t.ClassMethod>>,
 ) {
   // Support following syntax:
   // <div tt:if="{show}"/><div tt:else/> -> {show ? <div/> : <div/>}
@@ -64,8 +65,11 @@ export function injectElseCommand(
       (command.children || []).map((node: anyObject) => {
         if (node.type === NodeType.Mustache) {
           // Mustache
-          attrsCollector.add(node.text);
-          return t.identifier(node.text);
+          const { identifiers, expression } = transformTextToExpression(
+            node.text
+          );
+          identifiers.forEach((i) => attrsCollector.add(i));
+          return expression;
         } else if (node.type === NodeType.Text) {
           // Text
           return t.stringLiteral(node.text);
@@ -95,7 +99,12 @@ export function injectElseCommand(
   // 递归一次子组件
   if (vnode.children && vnode.children.length > 0) {
     vnode.children.forEach((child: anyObject) => {
-      jsxElementGenerator(child, element, attrsCollector, templateCollector);
+      jsxElementGenerator(
+        child,
+        element,
+        attrsCollector,
+        templateCollector,
+      );
     });
   }
 }

@@ -33,8 +33,8 @@ function statusClass(name, animate, loaded) {
     return name + '-status-' + animate ? loaded ? 'loaded' : 'preload' : 'loaded';
 }
 
-function statusErrorClass(name, hasError) {
+export function statusErrorClass(name, hasError) {
     return hasError ? name + '-status-error' : '';
 }
 
-export {sizeClass, shapeClass, sizeStyle, statusClass, statusErrorClass, textSizeClass};
+export {sizeClass, shapeClass, sizeStyle, statusClass, textSizeClass};

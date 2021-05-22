@@ -12,6 +12,8 @@ import { genRootElement } from "./element/root";
 import { wrapIfCommand } from "./command/if";
 import { injectElseCommand } from "./command/else";
 import { wrapForCommand } from "./command/for";
+import { transformTextToExpression } from "./utils/tools";
+import { EmptyTag } from "./common";
 
 export default function jsxElementGenerator(
   vnode: anyObject,
@@ -51,9 +53,9 @@ export default function jsxElementGenerator(
         default:
           if (vnode.tag === "block") {
             console.warn(
-              `[log] ReactLynx 没有 Fragment 组件, <block> 这里会替换成 <view>`
+              `[log] ReactLynx 没有 Fragment 组件, <block> 这里会替换成 <${EmptyTag}>`
             );
-            vnode.tag = "view";
+            vnode.tag = EmptyTag; // view
           }
 
           // Element
@@ -133,8 +135,14 @@ export default function jsxElementGenerator(
       wrappedElement = t.jSXText(vnode.text);
       break;
     case NodeType.Mustache:
-      attrsCollector.add(vnode.text);
-      wrappedElement = t.jSXExpressionContainer(t.identifier(vnode.text));
+      const { identifiers, expression } = transformTextToExpression(vnode.text);
+      identifiers.forEach((i) => attrsCollector.add(i));
+      wrappedElement = t.jSXExpressionContainer(expression);
+      break;
+    case NodeType.Comment:
+      wrappedElement = t.jSXExpressionContainer(
+        t.stringLiteral(`/*${vnode.text}*/`)
+      );
       break;
     default:
       debugger;
@@ -144,10 +152,11 @@ export default function jsxElementGenerator(
     parentElement.children.push(wrappedElement);
   }
 
-  // TODO: 需要断点看看这里少处理了哪些 tag
-  // if (!wrappedElement) {
-  //   throw new Error("check");
-  // }
+  if (!wrappedElement) {
+    debugger;
+    // 需要断点看看这里少处理了哪些 tag
+    throw new Error("check");
+  }
 
   ast = (wrappedElement as any) as t.JSXElement;
 

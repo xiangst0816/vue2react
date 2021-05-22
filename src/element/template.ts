@@ -1,12 +1,10 @@
 import { anyObject, NodeType } from "../utils/types";
-import {
-  getIdentifierFromTexts,
-  getTemplateComponentName,
-} from "../utils/tools";
+import { getTemplateComponentName } from "../utils/tools";
 import * as t from "@babel/types";
 import * as parser from "@babel/parser";
 import traverse from "@babel/traverse";
 import jsxElementGenerator from "../jsxElementGenerator";
+import { EmptyTag } from "../common";
 
 export function isTemplateNameAttr(vnode: anyObject) {
   return Boolean(getTemplateNameAttr(vnode));
@@ -80,17 +78,19 @@ export function collectTemplateRenderMethods(
       //   renderMsgItemTemplateComponent (data) {
       //     const { aa } = data;
       //     return (
-      //       <View>
+      //       <EmptyTag>
       //         <Text>{aa}</Text>
       //         <Text>{aa}</Text>
-      //       </View>
+      //       </EmptyTag>
       //     )
       //   }
       // }
       templateNode = vnode;
-      templateNode.tag = "view"; // 默认给个 view
+      templateNode.tag = EmptyTag; // 默认给个 EmptyTag = view
       templateNode.attrs = []; // 清除属性
-      // TODO: [DOC] 边界提示，template 里面的元素建议包裹一层，不建议罗列，因为 LynxReact 这边没有 Fragment 组件
+      console.log(
+        `[Warn] 边界提示，template 里面的元素建议包裹一层，不建议罗列，因为 LynxReact 这边没有 Fragment 组件`
+      );
     }
 
     // 遍历完 template 内部节点
@@ -99,9 +99,9 @@ export function collectTemplateRenderMethods(
       attrsCollector: _attrsCollector,
     } = jsxElementGenerator(templateNode, undefined, new Set(), new Set());
 
-    let dataProperties: t.ObjectProperty[] = getIdentifierFromTexts([
+    let dataProperties: t.ObjectProperty[] = [
       ...(_attrsCollector as Set<string>),
-    ]).map((attr) =>
+    ].map((attr) =>
       t.objectProperty(t.identifier(attr), t.identifier(attr), false, true)
     );
 

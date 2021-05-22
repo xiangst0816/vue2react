@@ -1,5 +1,8 @@
 {
   "component": true,
+  "aaa": true,
+  "bbb": true,
+  "usingComponents": {},
   "usingTemplateAPI": {
     "templateFunctions": [
       {

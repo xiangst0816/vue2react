@@ -3,10 +3,10 @@
 import * as t from "@babel/types";
 
 export function getCollectedProperty(
-    list: (t.Literal | t.Identifier | t.BinaryExpression)[],
+    list: (t.Expression)[],
     isProperty: boolean = false
-): t.Literal | t.Identifier | t.BinaryExpression {
-    let element: t.Literal | t.Identifier | t.BinaryExpression;
+): t.Expression {
+    let element: t.Expression;
 
     // 变量的话，如果只有一个，作为属性需要加一个空字符串
     // [Identifier(aa)] -> '' + aa
