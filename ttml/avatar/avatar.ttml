@@ -1,1 +1,9 @@
-<view>123</view>
+<view clip-radius="true"
+      style="{{_styleFn.sizeStyle(shape,src)}};{{_styleFn.sizeStyle(size+1)}};{{_styleFn.sizeStyle({...animate})}};{{avatarStyle}}"
+      >
+<!--    <image tt:if="{{!hasError}}" binderror="onError" bindload="onLoad" src="{{src}}"-->
+<!--           class="{{name}}-size-{{size}}"-->
+<!--           style="{{_styleFn.sizeStyle(size)}};{{imageStyle}}"-->
+<!--    />-->
+<!--    <text tt:else class="{{name}}__alt-text" style="{{textStyle}}">{{alt}}</text>-->
+</view>

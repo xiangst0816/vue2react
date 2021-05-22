@@ -135,24 +135,24 @@ export function genObjectExpressionFromObject(
   return t.objectExpression([t.objectProperty()]);
 }
 
-// export function getIdentifierFromTexts(attrs: string[]): string[] {
-//   console.log("！！！检查这里是否有未检出的 关键字");
-//   console.log(attrs);
-//   const list: string[] = [];
-//   // Notice: '25 * index', 'value1 + value2' 这里的 attr 拆分出来真正的变量
-//   attrs.forEach((attr) => {
-//     const ast = parser.parse(attr);
-//     traverse(ast, {
-//       Identifier(path) {
-//         if (!list.includes(path.node.name)) {
-//           list.push(path.node.name);
-//         }
-//       },
-//     });
-//   });
-//
-//   return list;
-// }
+export function getIdentifierFromTexts(attrs: string[]): string[] {
+  // console.log("！！！检查这里是否有未检出的 关键字");
+  // console.log(attrs);
+  const list: string[] = [];
+  // Notice: '25 * index', 'value1 + value2' 这里的 attr 拆分出来真正的变量
+  attrs.forEach((attr) => {
+    const ast = parser.parse(attr);
+    traverse(ast, {
+      Identifier(path) {
+        if (!list.includes(path.node.name)) {
+          list.push(path.node.name);
+        }
+      },
+    });
+  });
+
+  return list;
+}
 
 // <template name="xxx"> -> this.renderXxxTemplateComponent
 export function getTemplateComponentName(text: string) {
@@ -179,6 +179,37 @@ export function transformTextToExpression(text: string) {
           path.parent.expression === path.node
         ) {
           identifiers.push(path.node.name);
+        } else if (
+          // item+1 -> [item]
+          t.isBinaryExpression(path.parent)
+        ) {
+          identifiers.push(path.node.name);
+        } else if (
+          // {...item} -> [item]
+          t.isSpreadElement(path.parent)
+        ) {
+          identifiers.push(path.node.name);
+        } else if (
+          // {a||b} -> [a,b]
+          t.isLogicalExpression(path.parent)
+        ) {
+          identifiers.push(path.node.name);
+        } else if (
+          // {a?b:1} -> [a,b]
+          t.isConditionalExpression(path.parent)
+        ) {
+          identifiers.push(path.node.name);
+        } else if (t.isCallExpression(path.parent)) {
+          // sizeStyle(shape, src) -> [shape,src]
+          path.parent.arguments.forEach((i) => {
+            if (t.isIdentifier(i)) {
+              identifiers.push(i.name);
+            } else {
+              // debugger;
+            }
+          });
+        } else {
+          debugger;
         }
       }
     },
@@ -186,6 +217,6 @@ export function transformTextToExpression(text: string) {
   if (t.isExpressionStatement(ast.program.body[0])) {
     expression = ast.program.body[0].expression;
   }
-
+  console.log("text->", text, "identifiers->", identifiers);
   return { identifiers, expression };
 }

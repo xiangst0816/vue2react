@@ -96,7 +96,7 @@ export default class ReactVisitor {
         t.importDefaultSpecifier(t.identifier("ReactLynx")),
         t.importSpecifier(t.identifier("Component"), t.identifier("Component")),
       ],
-      t.stringLiteral("@byted-lynx/react-runtime1")
+      t.stringLiteral("@byted-lynx/react-runtime")
     );
 
     path.node.body.unshift(importReact);
@@ -151,10 +151,12 @@ export default class ReactVisitor {
       } else if (this.app.script.computed[attr]) {
         computed.push(attr);
       } else {
-        console.log(
+        console.warn(`------------------------`);
+        console.warn(
           `属性映射未识别，原样输出（也许是在 template 中的变量） ->`,
           attr
         );
+        console.warn(`------------------------`);
       }
 
       return;

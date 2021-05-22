@@ -300,7 +300,7 @@ export function genCommonElement(
 
   // Support following syntax:
   // <view> -> <View>
-  const tagName = _.capitalize(vnode.tag);
+  const tagName = _.upperFirst(_.camelCase(vnode.tag));
   return t.jSXElement(
     t.jSXOpeningElement(t.jSXIdentifier(tagName), [
       ...styleAttrs,

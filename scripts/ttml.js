@@ -11,9 +11,10 @@ const {
   formatCode,
 } = require("../dist/index");
 
-const name = "avatar";
+const name = "cell";
 const distDir = path.resolve(__dirname, name);
-const baseDir = path.resolve(__dirname, `../ttml/${name}`);
+// const baseDir = path.resolve(__dirname, `../ttml/${name}`);
+const baseDir = `/Users/xiangst/bytedance/lynx-mono/packages/lynx-ui/components/${name}`;
 const scriptPath = path.resolve(baseDir, `${name}.js`);
 const stylePath = path.resolve(baseDir, `${name}.ttss`);
 const templatePath = path.resolve(baseDir, `${name}.ttml`);
@@ -26,7 +27,7 @@ function getCode(codePath) {
 function transformCode(templateCode, scriptCode, styleCode, configCode) {
   // script
   const script = scriptIterator(scriptCode);
-  script.name = "avatar"; // todo 外部传入会这读文件名
+  script.name = `arco-${name}`;
   // console.log(script);
 
   // template
