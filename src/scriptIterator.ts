@@ -13,8 +13,7 @@ export default function scriptIterator(script: string) {
 
   const visitor = new ScriptVisitor();
 
-  // TODO: { onError: () => {}} -> { onError () {} }
-  // fix method write way
+  // Processing function notation
   // { onError: function () {} } -> { onError () {} }
   // { onError: () => {} } -> { onError () {} }
   traverse(vast, {
@@ -78,7 +77,11 @@ export default function scriptIterator(script: string) {
       visitor.importHandler(path);
     },
 
-    // TODO： 顶部 var
+    VariableDeclaration(path: NodePath<t.VariableDeclaration>) {
+      if (t.isProgram(path.parent)) {
+        visitor.variableDeclarationHandler(path);
+      }
+    },
 
     ObjectMethod(path: NodePath<t.ObjectMethod>) {
       // isTopLevelMethod -> Component({ m(){} })

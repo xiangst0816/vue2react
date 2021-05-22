@@ -9,6 +9,7 @@ export interface Script {
   methods: anyObject;
   computed: anyObject;
   imports: t.ImportDeclaration[];
+  variableDeclaration: t.VariableDeclaration[];
 }
 
 export interface Lepus {

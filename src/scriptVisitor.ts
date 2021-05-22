@@ -12,6 +12,7 @@ export default class ScriptVisitor {
   constructor() {
     this.script = {
       imports: [],
+      variableDeclaration: [],
       name: "",
       data: {},
       props: {},
@@ -22,6 +23,10 @@ export default class ScriptVisitor {
 
   importHandler(path: NodePath<t.ImportDeclaration>) {
     this.script.imports.push(path.node);
+  }
+
+  variableDeclarationHandler(path: NodePath<t.VariableDeclaration>) {
+    this.script.variableDeclaration.push(path.node);
   }
 
   nameHandler(path: NodePath<t.ObjectProperty>) {
@@ -106,8 +111,8 @@ export default class ScriptVisitor {
           type: node.value.name.toLowerCase(),
           typeValue: node.value.name.toLowerCase(),
           defaultValue: undefined,
-          // required: false,
-          // validator: false,
+          required: false,
+          validator: false,
           observer: undefined,
         };
       } else if (t.isArrayExpression(node.value)) {
@@ -121,14 +126,12 @@ export default class ScriptVisitor {
           type: types.length > 1 ? "typesOfArray" : types[0],
           typeValue: types.length > 1 ? types : types[0],
           defaultValue: undefined,
-          // required: false,
-          // validator: false,
+          required: false,
+          validator: false,
           observer: undefined,
         };
       } else if (t.isObjectExpression(node.value)) {
         // Support following syntax:
-        // list: {type: Array, default: () => [], require: true}
-        // or
         // title: {type: String, value: "title"}
         // or
         // title: {type: [String, Number], value: "title"}
@@ -136,8 +139,8 @@ export default class ScriptVisitor {
           type: "",
           typeValue: "",
           defaultValue: undefined,
-          // required: false,
-          // validator: false,
+          required: false,
+          validator: false,
           observer: undefined,
         };
 
@@ -161,10 +164,9 @@ export default class ScriptVisitor {
                   } else if (t.isArrayExpression(node.value)) {
                     // Support following syntax:
                     // title: {type: [String, Number]}
-                    const types = node.value.elements
-                      .map((element) =>
-                        (element as t.Identifier).name.toLowerCase()
-                      )
+                    const types = node.value.elements.map((element) =>
+                      (element as t.Identifier).name.toLowerCase()
+                    );
                     this.prop.type =
                       types.length > 1 ? "typesOfArray" : types[0];
                     this.prop.typeValue = types.length > 1 ? types : types[0];

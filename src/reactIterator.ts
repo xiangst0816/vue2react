@@ -12,11 +12,12 @@ export default function reactIterator(
 
   traverse(rast, {
     Program(path: NodePath<t.Program>) {
-      visitor.genLepusImports(path, visitor.app.lepus);
-      visitor.genImports(path, hasStyle);
+      visitor.genVariableDeclaration(path); // no.3
+      visitor.genLepusImports(path, visitor.app.lepus); // no.2
+      visitor.genImports(path, hasStyle); // no.1
+      visitor.genComments(path); // no.0
     },
 
-    // TODO：全局变量，这个检查下
     ClassBody(path: NodePath<t.ClassBody>) {
       visitor.genConfigProperty(path);
       visitor.genStaticProps(path);

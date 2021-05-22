@@ -1,33 +1,12 @@
 import { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 import { App, Lepus } from "./utils/types";
+import { ReactComponents } from "./common";
 import {
   genPropTypes,
   genDefaultProps,
   genObjectExpressionFromObject,
-  // getIdentifierFromTexts,
 } from "./utils/tools";
-
-const ReactComponents = [
-  "View",
-  "Image",
-  "Text",
-  "Input",
-  "WebcastInput",
-  "WebcastInputView",
-  "ScrollView",
-  "Swiper",
-  "SwiperItem",
-  "Picker",
-  "InlineImage",
-  "FilterImage",
-  "InlineText",
-  "Textarea",
-  "List",
-  "Header",
-  "Footer",
-  "SVG",
-];
 
 export default class ReactVisitor {
   app: App;
@@ -59,6 +38,25 @@ export default class ReactVisitor {
     });
   }
 
+  genVariableDeclaration(path: NodePath<t.Program>) {
+    this.app.script.variableDeclaration.forEach((node) => {
+      path.node.body.unshift(node);
+    });
+  }
+
+  genComments(path: NodePath<t.Program>) {
+    const contents = [
+      " -------------------------------------",
+      " 当前代码为自动生成，不建议在此基础上二次修改;",
+      " The current code is automatically generated, ",
+      " and it is not recommended to modify it twice on this basis",
+      " -------------------------------------",
+    ];
+    contents.reverse().forEach((content) => {
+      path.addComment("leading", content, true);
+    });
+  }
+
   genImports(path: NodePath<t.Program>, hasStyle: boolean) {
     // add 'import ./index.css'
     if (hasStyle) {
@@ -81,7 +79,6 @@ export default class ReactVisitor {
     }
 
     // add 'import { Text } from '@byted-lynx/react-components';'
-
     const importReactComponent = t.importDeclaration(
       ReactComponents.map((componentName) =>
         t.importSpecifier(
@@ -99,8 +96,9 @@ export default class ReactVisitor {
         t.importDefaultSpecifier(t.identifier("ReactLynx")),
         t.importSpecifier(t.identifier("Component"), t.identifier("Component")),
       ],
-      t.stringLiteral("@byted-lynx/react-runtime")
+      t.stringLiteral("@byted-lynx/react-runtime1")
     );
+
     path.node.body.unshift(importReact);
   }
 
@@ -112,7 +110,7 @@ export default class ReactVisitor {
   genClassMethods(path: NodePath<t.ClassBody>) {
     const methods = {
       ...this.app.script.methods,
-      // ...this.app.script.computed,
+      ...this.app.script.computed,
     };
     for (const name in methods) {
       if (methods.hasOwnProperty(name)) {
@@ -137,9 +135,6 @@ export default class ReactVisitor {
 
     const attrsCollector = this.app.template.attrsCollector;
 
-    console.log("template 中搜集的全部变量");
-    console.log(attrsCollector);
-
     attrsCollector.forEach((attr) => {
       if (this.app.script.data[attr]) {
         dataProperties.push(
@@ -153,15 +148,15 @@ export default class ReactVisitor {
         methodProperties.push(
           t.objectProperty(t.identifier(attr), t.identifier(attr), false, true)
         );
+      } else if (this.app.script.computed[attr]) {
+        computed.push(attr);
       } else {
         console.log(
           `属性映射未识别，原样输出（也许是在 template 中的变量） ->`,
           attr
         );
       }
-      // else if (this.app.script.computed[attr]) {
-      //   computed.push(attr);
-      // }
+
       return;
     });
 
