@@ -21,7 +21,6 @@ export default function reactIterator(
 
     ClassBody(path: NodePath<t.ClassBody>) {
       visitor.genConfigProperty(path);
-
       visitor.genClassMethods(path);
       visitor.genRenderMethods(path);
     },
@@ -30,6 +29,12 @@ export default function reactIterator(
   traverse(rast, {
     MemberExpression(path: NodePath<t.MemberExpression>) {
       visitor.remapLepusMemberExpression(path);
+    },
+  });
+
+  traverse(rast, {
+    JSXElement(path: NodePath<t.JSXElement>) {
+      visitor.genSelfClosingElement(path);
     },
   });
 

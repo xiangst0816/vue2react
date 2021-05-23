@@ -13,8 +13,8 @@ const {
 
 const name = "avatar";
 const distDir = path.resolve(__dirname, name);
-// const baseDir = path.resolve(__dirname, `../ttml/${name}`);
-const baseDir = `/Users/xiangst/bytedance/lynx-mono/packages/lynx-ui/components/${name}`;
+const baseDir = path.resolve(__dirname, `../ttml/${name}`);
+// const baseDir = `/Users/xiangst/bytedance/lynx-mono/packages/lynx-ui/components/${name}`;
 const scriptPath = path.resolve(baseDir, `${name}.js`);
 const stylePath = path.resolve(baseDir, `${name}.ttss`);
 const templatePath = path.resolve(baseDir, `${name}.ttml`);
@@ -52,8 +52,8 @@ function transformCode(templateCode, scriptCode, styleCode, configCode) {
 
   const targetCode = generate(targetAst).code;
 
-  // const reactCode = targetCode
-  const reactCode = formatCode(targetCode, "react");
+  const reactCode = targetCode
+  // const reactCode = formatCode(targetCode, "react");
 
   // console.log("reactCode");
   // console.log(reactCode);

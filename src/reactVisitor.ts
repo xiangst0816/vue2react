@@ -103,8 +103,12 @@ export default class ReactVisitor {
   }
 
   genStaticProps(path: NodePath<t.Program>) {
-    path.node.body.push(genPropTypes(this.app.script.props,this.app.script.name));
-    path.node.body.push(genDefaultProps(this.app.script.props,this.app.script.name));
+    path.node.body.push(
+      genPropTypes(this.app.script.props, this.app.script.name)
+    );
+    path.node.body.push(
+      genDefaultProps(this.app.script.props, this.app.script.name)
+    );
   }
 
   genClassMethods(path: NodePath<t.ClassBody>) {
@@ -251,6 +255,17 @@ export default class ReactVisitor {
     ) {
       // is lepus identifier
       path.parent.callee = path.parent.callee.property;
+    }
+  }
+
+  genSelfClosingElement(path: NodePath<t.JSXElement>) {
+    if (
+      path.node.children.length === 0 &&
+      !path.node.openingElement.selfClosing
+    ) {
+      // Support following syntax:
+      // <View></View> -> <View />
+      path.node.openingElement.selfClosing = true;
     }
   }
 }
