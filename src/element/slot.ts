@@ -16,7 +16,7 @@ export function genSlotElement(
   if (!slotNameAttr || slotNameAttr.length === 0) {
     // Support following syntax:
     // <slot></slot> -> {this.props.children}
-    slotNameElement = t.identifier("children");
+    slotNameElement = t.stringLiteral("children");
   } else {
     // Support following syntax:
     // <slot name="right"></slot> -> {this.props['renderRight']}
