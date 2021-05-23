@@ -17,10 +17,16 @@ export interface Lepus {
   path: string; // './test.lepus'
 }
 
+export type EventsCollector = Map<
+  string,
+  { name: string; stopPropagation: boolean }
+>;
+
 export interface Template {
   ast: t.JSXElement | undefined;
   attrsCollector: Readonly<Set<string>>;
   templateCollector: Readonly<Set<t.ClassMethod>>;
+  eventsCollector: Readonly<EventsCollector>;
 }
 
 export interface App {

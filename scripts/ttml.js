@@ -11,7 +11,7 @@ const {
   formatCode,
 } = require("../dist/index");
 
-const name = "button";
+const name = "drag-sort";
 const distDir = path.resolve(__dirname, name);
 
 // const baseDir = path.resolve(__dirname, `../ttml/${name}`);

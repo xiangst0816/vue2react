@@ -97,7 +97,7 @@ export function collectTemplateRenderMethods(
     const {
       ast: templateJsxElement,
       attrsCollector: _attrsCollector,
-    } = jsxElementGenerator(templateNode, undefined, new Set(), new Set());
+    } = jsxElementGenerator(templateNode, undefined, new Set(), new Set(), new Map());
 
     let dataProperties: t.ObjectProperty[] = [
       ...(_attrsCollector as Set<string>),

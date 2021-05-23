@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { anyObject, Template, NodeType } from "./utils/types";
+import { anyObject, Template, NodeType, EventsCollector } from "./utils/types";
 import { genSlotElement } from "./element/slot";
 import {
   collectTemplateRenderMethods,
@@ -19,7 +19,8 @@ export default function jsxElementGenerator(
   vnode: anyObject,
   parentElement: t.JSXElement | undefined,
   attrsCollector: Readonly<Set<string>>, // 用于在 render 中设置 state/props 等的映射
-  templateCollector: Readonly<Set<t.ClassMethod>> // 用于在 render 中设置 XxTemplateComponent 等子模板
+  templateCollector: Readonly<Set<t.ClassMethod>>, // 用于在 render 中设置 XxTemplateComponent 等子模板
+  eventsCollector: Readonly<EventsCollector> // 用于在 class 中设置 事件处理函数，stopPropagation+bindThis
 ): Template {
   let element: t.JSXElement | undefined = undefined; // 当前 element
   let wrappedElement:
@@ -32,7 +33,12 @@ export default function jsxElementGenerator(
   switch (vnode.type) {
     case NodeType.Root:
       // Root
-      element = genRootElement(vnode, attrsCollector, templateCollector);
+      element = genRootElement(
+        vnode,
+        attrsCollector,
+        templateCollector,
+        eventsCollector
+      );
       wrappedElement = element;
       break;
     case NodeType.Element:
@@ -59,7 +65,7 @@ export default function jsxElementGenerator(
           }
 
           // Element
-          element = genCommonElement(vnode, attrsCollector);
+          element = genCommonElement(vnode, attrsCollector, eventsCollector);
           wrappedElement = element;
           break;
       }
@@ -88,7 +94,8 @@ export default function jsxElementGenerator(
                   element,
                   parentElement,
                   attrsCollector,
-                  templateCollector
+                  templateCollector,
+                  eventsCollector
                 );
 
                 // else/elif 不需要独立的 element；这里直接返回
@@ -96,6 +103,7 @@ export default function jsxElementGenerator(
                   ast: element,
                   attrsCollector,
                   templateCollector,
+                  eventsCollector,
                 };
               case "for":
                 wrappedElement = wrapForCommand(
@@ -126,7 +134,8 @@ export default function jsxElementGenerator(
             child,
             element,
             attrsCollector,
-            templateCollector
+            templateCollector,
+            eventsCollector
           );
         });
       }
@@ -164,5 +173,6 @@ export default function jsxElementGenerator(
     ast,
     attrsCollector,
     templateCollector,
+    eventsCollector,
   };
 }

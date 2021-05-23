@@ -64,14 +64,20 @@ export default class ReactVisitor {
     // -> import ArcoAvatar from "@byted-lynx/ui/components/avatar/avatar.jsx";
     const usingComponents = this.app.config.usingComponents || {};
     if (usingComponents && Object.keys(usingComponents).length > 0) {
-      Object.keys(usingComponents).reverse().forEach((name) => {
-        path.node.body.unshift(
-          t.importDeclaration(
-            [t.importDefaultSpecifier(t.identifier(formatComponentName(name)))],
-            t.stringLiteral(`${usingComponents[name]}.jsx`)
-          )
-        );
-      });
+      Object.keys(usingComponents)
+        .reverse()
+        .forEach((name) => {
+          path.node.body.unshift(
+            t.importDeclaration(
+              [
+                t.importDefaultSpecifier(
+                  t.identifier(formatComponentName(name))
+                ),
+              ],
+              t.stringLiteral(`${usingComponents[name]}.jsx`)
+            )
+          );
+        });
     }
 
     // add 'import ./index.css'
@@ -127,9 +133,80 @@ export default class ReactVisitor {
       ...this.app.script.methods,
       ...this.app.script.computed,
     };
+    const eventsCollector = this.app.template.eventsCollector;
+
     for (const name in methods) {
       if (methods.hasOwnProperty(name)) {
-        path.node.body.push(methods[name]);
+        if (eventsCollector.has(name)) {
+          // 绑定事件的函数
+          // eventHandler = (_dataset) => (e) => {
+          //   // maybe e.stopPropagation()
+          //   e.currentTarget.dataset = _dataset;
+          //   // .rest statement
+          // }
+          const stopPropagation = Boolean(
+            eventsCollector.get(name)?.stopPropagation
+          );
+          const method = methods[name] as t.ClassMethod;
+          const eventKey = method.key as t.Identifier;
+          const eventParam = method.params[0] as t.Identifier | undefined;
+          const eventBody = method.body.body;
+
+          // e.stopPropagation()
+          const stopPropagationExpressionStatement =
+            eventParam && stopPropagation
+              ? t.expressionStatement(
+                  t.callExpression(
+                    t.memberExpression(
+                      eventParam,
+                      t.identifier("stopPropagation")
+                    ),
+                    []
+                  )
+                )
+              : t.emptyStatement();
+
+          if (!eventParam) {
+            debugger;
+          }
+          // e.currentTarget.dataset = _dataset;
+          const datasetExpressionStatement = eventParam
+            ? t.expressionStatement(
+                t.assignmentExpression(
+                  "=",
+                  t.memberExpression(
+                    t.memberExpression(
+                      eventParam,
+                      t.identifier("currentTarget")
+                    ),
+                    t.identifier("dataset")
+                  ),
+                  t.identifier("_dataset")
+                )
+              )
+            : t.emptyStatement();
+
+          const eventHandlerClassProperty = t.classProperty(
+            eventKey,
+            t.arrowFunctionExpression(
+              [t.identifier("_dataset")],
+              t.arrowFunctionExpression(
+                eventParam ? [eventParam] : [],
+                t.blockStatement([
+                  stopPropagationExpressionStatement,
+                  datasetExpressionStatement,
+                  ...eventBody,
+                ])
+              )
+            )
+          );
+
+          path.node.body.push(eventHandlerClassProperty);
+        } else {
+          // 普通函数
+          // onLoad() {}
+          path.node.body.push(methods[name]);
+        }
       }
     }
 

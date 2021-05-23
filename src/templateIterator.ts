@@ -14,5 +14,5 @@ export default function templateIterator(template: string): Template {
     });
   }
 
-  return jsxElementGenerator(root, undefined, new Set(), new Set());
+  return jsxElementGenerator(root, undefined, new Set(), new Set(), new Map());
 }

@@ -1,6 +1,6 @@
 import * as t from "@babel/types";
 import { getCollectedProperty } from "../utils/generatorUtils";
-import { anyObject, NodeType } from "../utils/types";
+import { anyObject, EventsCollector, NodeType } from "../utils/types";
 import jsxElementGenerator from "../jsxElementGenerator";
 import { transformTextToExpression } from "../utils/tools";
 
@@ -11,6 +11,7 @@ export function injectElseCommand(
   parentElement: t.JSXElement | undefined,
   attrsCollector: Readonly<Set<string>>,
   templateCollector: Readonly<Set<t.ClassMethod>>,
+  eventsCollector: Readonly<EventsCollector>
 ) {
   // Support following syntax:
   // <div tt:if="{show}"/><div tt:else/> -> {show ? <div/> : <div/>}
@@ -96,6 +97,12 @@ export function injectElseCommand(
     }
   }
 
+  // {bool ? <View /> : {this.props["renderIcon"]}} -> {bool ? <View /> : this.props["renderIcon"]}
+  if (t.isJSXExpressionContainer(previousConditionalExpression.alternate)) {
+    const alternate = previousConditionalExpression.alternate as t.JSXExpressionContainer;
+    previousConditionalExpression.alternate = alternate.expression;
+  }
+
   // 递归一次子组件
   if (vnode.children && vnode.children.length > 0) {
     vnode.children.forEach((child: anyObject) => {
@@ -104,6 +111,7 @@ export function injectElseCommand(
         element,
         attrsCollector,
         templateCollector,
+        eventsCollector
       );
     });
   }

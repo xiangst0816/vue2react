@@ -1,16 +1,24 @@
-import debounce from "debounce2";
-
-var Size;
-(function (Size) {
-  Size["LARGE"] = "large";
-  Size["MEDIUM"] = "medium";
-  Size["SMALL"] = "small";
-  Size["MINIMUM"] = "minimum";
-})(Size || (Size = {}));
-var a = 123;
-
-function aa() {}
-
-const aa2 = function () {};
-
-Component({});
+Component({
+  data: {
+    string: "string",
+    boolean: true,
+    number: 0,
+    obj: { a: 1 },
+    array: [1, 2, 3, 4],
+  },
+  handleEvent: function (e) {
+    console.log("e:");
+    console.log(e);
+    const dataset = e.currentTarget.dataset;
+    console.log(dataset);
+  },
+  catchEvent: function (e) {
+    console.log("e:");
+    console.log(e);
+    const dataset = e.currentTarget.dataset;
+    console.log(dataset);
+  },
+  onLoad: function () {
+    console.log("hello world card loaded");
+  },
+});
