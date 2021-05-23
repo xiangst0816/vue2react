@@ -45,7 +45,7 @@ export default function lepusIterator(config: string, root: string): Lepus[] {
         });
 
         list.push({
-          path: lepusPath,
+          path: `${lepusPath}.js`,
           name: lepusName,
           specifiers: lepusSpecifiers,
         });

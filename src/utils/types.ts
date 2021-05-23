@@ -8,8 +8,7 @@ export interface Script {
   props: anyObject;
   methods: anyObject;
   computed: anyObject;
-  imports: t.ImportDeclaration[];
-  variableDeclaration: t.VariableDeclaration[];
+  topModuleDeclarationsAndExpressions: (t.ModuleDeclaration | t.Statement)[];
 }
 
 export interface Lepus {

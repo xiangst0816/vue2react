@@ -3,7 +3,6 @@ import traverse, { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import ScriptVisitor from "./scriptVisitor";
-import { identifier, Identifier, objectMethod } from "babel-types/ts3.6";
 
 export default function scriptIterator(script: string) {
   // AST for script in lynx
@@ -47,8 +46,8 @@ export default function scriptIterator(script: string) {
       if (
         parent &&
         t.isCallExpression(parent) &&
-        ((parent.callee as Identifier).name === "Component" ||
-          (parent.callee as Identifier).name === "Card")
+        ((parent.callee as t.Identifier).name === "Component" ||
+          (parent.callee as t.Identifier).name === "Card")
       ) {
         switch (name) {
           // opt.data
@@ -71,18 +70,8 @@ export default function scriptIterator(script: string) {
     },
   });
 
-  // collect import, name, methods, computed, cycle...
+  // collect name, methods, computed, cycle...
   traverse(vast, {
-    ImportDeclaration(path: NodePath<t.ImportDeclaration>) {
-      visitor.importHandler(path);
-    },
-
-    VariableDeclaration(path: NodePath<t.VariableDeclaration>) {
-      if (t.isProgram(path.parent)) {
-        visitor.variableDeclarationHandler(path);
-      }
-    },
-
     ObjectMethod(path: NodePath<t.ObjectMethod>) {
       // isTopLevelMethod -> Component({ m(){} })
       const isTopLevelMethod = Boolean(
@@ -92,7 +81,7 @@ export default function scriptIterator(script: string) {
       const name = (path.node.key as t.Identifier).name;
 
       if (parent && t.isCallExpression(parent) && isTopLevelMethod) {
-        if ((parent.callee as Identifier).name === "Component") {
+        if ((parent.callee as t.Identifier).name === "Component") {
           const LynxComponentCycle = [
             "created",
             "detached",
@@ -109,7 +98,7 @@ export default function scriptIterator(script: string) {
             // { outerMethods () {} }
             visitor.objectMethodHandler(path);
           }
-        } else if ((parent.callee as Identifier).name === "Card") {
+        } else if ((parent.callee as t.Identifier).name === "Card") {
           const LynxCardCycle = [
             "onLoad",
             "onShow",
@@ -152,8 +141,8 @@ export default function scriptIterator(script: string) {
       if (
         parent &&
         t.isCallExpression(parent) &&
-        ((parent.callee as Identifier).name === "Component" ||
-          (parent.callee as Identifier).name === "Card")
+        ((parent.callee as t.Identifier).name === "Component" ||
+          (parent.callee as t.Identifier).name === "Card")
       ) {
         switch (name) {
           case "name":
@@ -164,6 +153,19 @@ export default function scriptIterator(script: string) {
         }
       }
     },
+  });
+
+  // collect top import/variable/expression(not component/card)/function s
+  vast.program.body.forEach((i) => {
+    const isCardOrComponentStatement =
+      t.isExpressionStatement(i) &&
+      t.isCallExpression(i.expression) &&
+      t.isIdentifier(i.expression.callee) &&
+      (i.expression.callee.name === "Component" ||
+        i.expression.callee.name === "Card");
+    if (!isCardOrComponentStatement) {
+      visitor.topModuleDeclarationsAndExpressionsHandler(i);
+    }
   });
 
   return visitor.script;

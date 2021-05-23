@@ -15,6 +15,12 @@ export default class ReactVisitor {
     this.app = app;
   }
 
+  genTopModuleDeclarationsAndExpressions(path: NodePath<t.Program>) {
+    this.app.script.topModuleDeclarationsAndExpressions.forEach((node) => {
+      path.node.body.unshift(node);
+    });
+  }
+
   genLepusImports(path: NodePath<t.Program>, lepusImports: Lepus[]) {
     // add import { handleText } from './test.lepus';
     // add import { handleText1, handleText2 } from './test2.lepus';
@@ -38,12 +44,6 @@ export default class ReactVisitor {
     });
   }
 
-  genVariableDeclaration(path: NodePath<t.Program>) {
-    this.app.script.variableDeclaration.forEach((node) => {
-      path.node.body.unshift(node);
-    });
-  }
-
   genComments(path: NodePath<t.Program>) {
     const contents = [
       " -------------------------------------",
@@ -63,11 +63,6 @@ export default class ReactVisitor {
       const importCSS = t.importDeclaration([], t.stringLiteral("./index.css"));
       path.node.body.unshift(importCSS);
     }
-
-    this.app.script.imports.forEach((node) => {
-      node.leadingComments = [];
-      path.node.body.unshift(node);
-    });
 
     // add 'import PropTypes from "PropType";'
     if (Object.keys(this.app.script.props).length) {

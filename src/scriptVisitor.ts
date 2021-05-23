@@ -11,8 +11,7 @@ export default class ScriptVisitor {
 
   constructor() {
     this.script = {
-      imports: [],
-      variableDeclaration: [],
+      topModuleDeclarationsAndExpressions: [],
       name: "",
       data: {},
       props: {},
@@ -21,12 +20,11 @@ export default class ScriptVisitor {
     };
   }
 
-  importHandler(path: NodePath<t.ImportDeclaration>) {
-    this.script.imports.push(path.node);
-  }
-
-  variableDeclarationHandler(path: NodePath<t.VariableDeclaration>) {
-    this.script.variableDeclaration.push(path.node);
+  // js 文件顶部的一些申明及语句，原样转移
+  topModuleDeclarationsAndExpressionsHandler(
+    path: t.ModuleDeclaration | t.Statement
+  ) {
+    this.script.topModuleDeclarationsAndExpressions.unshift(path);
   }
 
   nameHandler(path: NodePath<t.ObjectProperty>) {
