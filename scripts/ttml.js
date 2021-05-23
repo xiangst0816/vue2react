@@ -11,7 +11,7 @@ const {
   formatCode,
 } = require("../dist/index");
 
-const name = "cell";
+const name = "avatar";
 const distDir = path.resolve(__dirname, name);
 // const baseDir = path.resolve(__dirname, `../ttml/${name}`);
 const baseDir = `/Users/xiangst/bytedance/lynx-mono/packages/lynx-ui/components/${name}`;

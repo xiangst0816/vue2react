@@ -26,8 +26,9 @@ function getFormatPropType(type: string) {
   return type === "boolean" ? "bool" : type;
 }
 
-export function genPropTypes(props: { [name: string]: any }) {
+export function genPropTypes(props: { [name: string]: any }, name: string) {
   const properties: t.ObjectProperty[] = [];
+  const componentName = formatComponentName(name);
 
   for (const name in props) {
     if (props.hasOwnProperty(name)) {
@@ -66,15 +67,24 @@ export function genPropTypes(props: { [name: string]: any }) {
       properties.push(t.objectProperty(t.identifier(name), val));
     }
   }
+
   // babel not support generate static class property now.
-  return t.classProperty(
-    t.identifier("static propTypes"),
-    t.objectExpression(properties)
+  return t.expressionStatement(
+    t.assignmentExpression(
+      "=",
+      t.memberExpression(
+        t.identifier(componentName),
+        t.identifier("propTypes"),
+        false
+      ),
+      t.objectExpression(properties)
+    )
   );
 }
 
-export function genDefaultProps(props: { [name: string]: any }) {
+export function genDefaultProps(props: { [name: string]: any }, name: string) {
   const properties: t.ObjectProperty[] = [];
+  const componentName = formatComponentName(name);
 
   for (const name in props) {
     if (props.hasOwnProperty(name)) {
@@ -106,10 +116,18 @@ export function genDefaultProps(props: { [name: string]: any }) {
       }
     }
   }
+
   // babel not support generate static class property now.
-  return t.classProperty(
-    t.identifier("static defaultProps"),
-    t.objectExpression(properties)
+  return t.expressionStatement(
+    t.assignmentExpression(
+      "=",
+      t.memberExpression(
+        t.identifier(componentName),
+        t.identifier("defaultProps"),
+        false
+      ),
+      t.objectExpression(properties)
+    )
   );
 }
 

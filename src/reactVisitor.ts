@@ -102,9 +102,9 @@ export default class ReactVisitor {
     path.node.body.unshift(importReact);
   }
 
-  genStaticProps(path: NodePath<t.ClassBody>) {
-    path.node.body.push(genPropTypes(this.app.script.props));
-    path.node.body.push(genDefaultProps(this.app.script.props));
+  genStaticProps(path: NodePath<t.Program>) {
+    path.node.body.push(genPropTypes(this.app.script.props,this.app.script.name));
+    path.node.body.push(genDefaultProps(this.app.script.props,this.app.script.name));
   }
 
   genClassMethods(path: NodePath<t.ClassBody>) {

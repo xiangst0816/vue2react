@@ -16,11 +16,12 @@ export default function reactIterator(
       visitor.genLepusImports(path, visitor.app.lepus); // no.2
       visitor.genImports(path, hasStyle); // no.1
       visitor.genComments(path); // no.0
+      visitor.genStaticProps(path);
     },
 
     ClassBody(path: NodePath<t.ClassBody>) {
       visitor.genConfigProperty(path);
-      visitor.genStaticProps(path);
+
       visitor.genClassMethods(path);
       visitor.genRenderMethods(path);
     },
