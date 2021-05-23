@@ -59,12 +59,12 @@ export default class ReactVisitor {
   }
 
   genImports(path: NodePath<t.Program>, hasStyle: boolean) {
-    // add Custom Component
+    // add custom component
     // { "arco-avatar": "@byted-lynx/ui/components/avatar/avatar" }
     // -> import ArcoAvatar from "@byted-lynx/ui/components/avatar/avatar.jsx";
     const usingComponents = this.app.config.usingComponents || {};
     if (usingComponents && Object.keys(usingComponents).length > 0) {
-      Object.keys(usingComponents).forEach((name) => {
+      Object.keys(usingComponents).reverse().forEach((name) => {
         path.node.body.unshift(
           t.importDeclaration(
             [t.importDefaultSpecifier(t.identifier(formatComponentName(name)))],

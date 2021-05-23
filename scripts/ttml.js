@@ -45,9 +45,8 @@ function transformCode(templateCode, scriptCode, styleCode, configCode) {
   };
 
   // react 模板相关
-
   const rast = reactTemplateBuilder(app);
-  const hasStyle = false;
+  const hasStyle = true;
 
   // collect-data + react-template => react-ast
   const targetAst = reactIterator(rast, app, hasStyle);
