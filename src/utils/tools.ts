@@ -181,7 +181,7 @@ export function getTemplateComponentName(text: string) {
 export function transformTextToExpression(text: string) {
   const ast = parser.parse(text);
   const identifiers: string[] = [];
-  let expression: t.Expression = t.identifier(text);
+  let expression: t.Expression = t.identifier(text); // default
   traverse(ast, {
     Identifier(path) {
       if (!identifiers.includes(path.node.name)) {
@@ -227,12 +227,16 @@ export function transformTextToExpression(text: string) {
             }
           });
         } else {
-          debugger;
+          // TODO
+          console.log(
+            `！！！！这个标识符未识别，不处理 -> ${path.node.name} <-`
+          );
         }
       }
     },
   });
   if (t.isExpressionStatement(ast.program.body[0])) {
+    // Have valid data
     expression = ast.program.body[0].expression;
   }
   console.log("text->", text, "identifiers->", identifiers);

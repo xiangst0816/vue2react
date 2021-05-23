@@ -6,6 +6,7 @@ import {
   genPropTypes,
   genDefaultProps,
   genObjectExpressionFromObject,
+  formatComponentName,
 } from "./utils/tools";
 
 export default class ReactVisitor {
@@ -58,6 +59,21 @@ export default class ReactVisitor {
   }
 
   genImports(path: NodePath<t.Program>, hasStyle: boolean) {
+    // add Custom Component
+    // { "arco-avatar": "@byted-lynx/ui/components/avatar/avatar" }
+    // -> import ArcoAvatar from "@byted-lynx/ui/components/avatar/avatar.jsx";
+    const usingComponents = this.app.config.usingComponents || {};
+    if (usingComponents && Object.keys(usingComponents).length > 0) {
+      Object.keys(usingComponents).forEach((name) => {
+        path.node.body.unshift(
+          t.importDeclaration(
+            [t.importDefaultSpecifier(t.identifier(formatComponentName(name)))],
+            t.stringLiteral(`${usingComponents[name]}.jsx`)
+          )
+        );
+      });
+    }
+
     // add 'import ./index.css'
     if (hasStyle) {
       const importCSS = t.importDeclaration([], t.stringLiteral("./index.css"));
@@ -225,6 +241,10 @@ export default class ReactVisitor {
 
   genConfigProperty(path: NodePath<t.ClassBody>) {
     const config = this.app.config;
+
+    delete config.usingComponents;
+    delete config.usingTemplateAPI;
+
     const objectExpression = genObjectExpressionFromObject(config || {});
     path.node.body.push(
       t.classProperty(t.identifier("config"), objectExpression)
