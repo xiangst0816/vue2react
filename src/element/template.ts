@@ -114,7 +114,7 @@ export function collectTemplateRenderMethods(
           // data mapping
           t.variableDeclaration("const", [
             t.variableDeclarator(
-              t.objectPattern(dataProperties as any),
+              t.objectPattern(dataProperties as any as t.AssignmentProperty[]), // TODO: check type
               t.identifier("data")
             ),
           ]),

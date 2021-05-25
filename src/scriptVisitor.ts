@@ -1,9 +1,8 @@
 import * as t from "@babel/types";
 import { NodePath } from "@babel/traverse";
-
-import { cycle } from "./utils/tools";
+import { LynxCardCycle, LynxComponentCycle } from "./common";
 import logger from "./utils/logUtil";
-import { Script } from "./utils/types";
+import { Script, ScriptProps } from "./utils/types";
 import formatThisExpression from "./formatThis";
 
 export default class ScriptVisitor {
@@ -11,12 +10,13 @@ export default class ScriptVisitor {
 
   constructor() {
     this.script = {
-      topModuleDeclarationsAndExpressions: [],
+      topStatement: [],
       name: "",
       data: {},
       props: {},
       methods: {},
       computed: {},
+      observer: [],
     };
   }
 
@@ -24,7 +24,7 @@ export default class ScriptVisitor {
   topModuleDeclarationsAndExpressionsHandler(
     path: t.ModuleDeclaration | t.Statement
   ) {
-    this.script.topModuleDeclarationsAndExpressions.unshift(path);
+    this.script.topStatement.unshift(path);
   }
 
   nameHandler(path: NodePath<t.ObjectProperty>) {
@@ -55,27 +55,55 @@ export default class ScriptVisitor {
     });
   }
 
-  cycleMethodHandler(path: NodePath<t.ObjectMethod>) {
-    const name = cycle[(path.node.key as t.Identifier).name];
-    let params: any[] = [];
-    const blockStatement = formatThisExpression(path, this.script);
+  cardCycleMethodHandler(path: NodePath<t.ObjectMethod>) {
+    const ttmlCycleName = (path.node.key as t.Identifier).name;
+    const reactCycleName = LynxCardCycle[ttmlCycleName];
+    if (reactCycleName) {
+      const params: t.Identifier[] = [];
+      // 函数内 this 需要处理下（this.data/this.properties）
+      const blockStatement = formatThisExpression(path, this.script);
 
-    if (name === "error") {
-      params = [t.identifier("error")];
+      if (reactCycleName === "onReady") {
+        params.push(t.identifier("error"));
+      }
+
+      // TODO：onDataChanged；看文档, 这里只做数据搜集；
+
+      const classMethod = t.classMethod(
+        "method",
+        t.identifier(reactCycleName),
+        params,
+        blockStatement
+      );
+      this.script.methods[reactCycleName] = classMethod;
+    } else {
+      console.log(`ttml 卡片生命周期函数 ${ttmlCycleName} 没有对等的 ReactLynx 实现！`);
     }
+  }
 
-    const classMethod = t.classMethod(
-      "method",
-      t.identifier(name),
-      params,
-      blockStatement
-    );
-    this.script.methods[name] = classMethod;
+  componentCycleMethodHandler(path: NodePath<t.ObjectMethod>) {
+    const ttmlCycleName = (path.node.key as t.Identifier).name;
+    const reactCycleName = LynxComponentCycle[ttmlCycleName];
+    if (reactCycleName) {
+      const params: t.Identifier[] = [];
+      // 函数内 this 需要处理下（this.data/this.properties）
+      const blockStatement = formatThisExpression(path, this.script);
+      const classMethod = t.classMethod(
+        "method",
+        t.identifier(reactCycleName),
+        params,
+        blockStatement
+      );
+      this.script.methods[reactCycleName] = classMethod;
+    } else {
+      console.log(`ttml 组件生命周期函数 ${ttmlCycleName} 没有对等的 ReactLynx 实现！`);
+    }
   }
 
   objectMethodHandler(path: NodePath<t.ObjectMethod>) {
     const name = (path.node.key as t.Identifier).name;
     let params = path.node.params;
+    // 函数内 this 需要处理下（this.data/this.properties）
     const blockStatement = formatThisExpression(path, this.script);
     const classMethod = t.classMethod(
       "method",
@@ -87,6 +115,7 @@ export default class ScriptVisitor {
   }
 
   computedHandler(path: NodePath<t.ObjectMethod>) {
+    // 函数内 this 需要处理下（this.data/this.properties）
     const blockStatement = formatThisExpression(path, this.script);
     this.script.computed[(path.node.key as t.Identifier).name] = t.classMethod(
       "method",
@@ -111,7 +140,7 @@ export default class ScriptVisitor {
           defaultValue: undefined,
           required: false,
           validator: false,
-          observer: undefined,
+          observer: false,
         };
       } else if (t.isArrayExpression(node.value)) {
         // Support following syntax:
@@ -126,11 +155,11 @@ export default class ScriptVisitor {
           defaultValue: undefined,
           required: false,
           validator: false,
-          observer: undefined,
+          observer: false,
         };
       } else if (t.isObjectExpression(node.value)) {
         // Support following syntax:
-        // title: {type: String, value: "title"}
+        // title: {type: String, value: "title", observer(){}}
         // or
         // title: {type: [String, Number], value: "title"}
         this.script.props[key] = {
@@ -139,79 +168,110 @@ export default class ScriptVisitor {
           defaultValue: undefined,
           required: false,
           validator: false,
-          observer: undefined,
+          observer: false,
         };
 
-        // recurse in ObjectExpression to deal with Property and FunctionExpression
+        interface PropsThis {
+          key: string;
+          prop: ScriptProps;
+          script: Script;
+        }
+
+        // recurse in ObjectExpression to deal with ObjectProperty and FunctionExpression
         const fetchPropsContent = {
-          Property(this: any, path: NodePath) {
-            const gradparentKey = (path.parentPath.parent as t.Property).key;
-            if (
-              gradparentKey &&
-              (gradparentKey as t.Identifier).name === this.key
-            ) {
-              const node = path.node as t.Property;
-              const name = (node.key as t.Identifier).name;
-              switch (name) {
-                case "type":
-                  if (t.isIdentifier(node.value)) {
-                    // Support following syntax:
-                    // title: {type: String}
-                    this.prop.type = node.value.name.toLowerCase();
-                    this.prop.typeValue = this.prop.type;
-                  } else if (t.isArrayExpression(node.value)) {
-                    // Support following syntax:
-                    // title: {type: [String, Number]}
-                    const types = node.value.elements.map((element) =>
-                      (element as t.Identifier).name.toLowerCase()
-                    );
-                    this.prop.type =
-                      types.length > 1 ? "typesOfArray" : types[0];
-                    this.prop.typeValue = types.length > 1 ? types : types[0];
-                  } else {
-                    logger.log(
-                      `The type in ${this.key} prop only supports identifier or array expression, eg: Boolean, [String]`,
-                      "info"
-                    );
-                  }
-                  break;
-                case "value":
-                  if (
-                    t.isStringLiteral(node.value) ||
-                    t.isBooleanLiteral(node.value) ||
-                    t.isNumericLiteral(node.value)
-                  ) {
-                    this.prop.defaultValue = node.value.value;
-                  } else if (
-                    t.isArrayExpression(node.value) ||
-                    t.isObjectExpression(node.value)
-                  ) {
-                    this.prop.defaultValue = node.value;
-                  }
-                  break;
-                case "observer":
-                  if (t.isFunctionExpression(node.value)) {
-                    this.prop.observer = node.value as t.FunctionExpression;
-                  } else {
-                    logger.log(
-                      `The type in ${this.key}.observer prop only supports function, eg: function observer(newVal,oldVal){}`,
-                      "info"
-                    );
-                  }
-                  break;
-                default:
-                  break;
-              }
+          ObjectProperty(this: PropsThis, path: NodePath) {
+            if (!t.isObjectProperty(path.parentPath.parent)) return;
+            const gradparentKey = path.parentPath.parent.key;
+            if (!gradparentKey || !t.isIdentifier(gradparentKey)) return;
+            if (gradparentKey.name !== this.key) return;
+
+            const node = path.node as t.ObjectProperty;
+            const name = (node.key as t.Identifier).name;
+            switch (name) {
+              case "type":
+                if (t.isIdentifier(node.value)) {
+                  // Support following syntax:
+                  // title: {type: String}
+                  this.prop.type = node.value.name.toLowerCase();
+                  this.prop.typeValue = this.prop.type;
+                } else if (t.isArrayExpression(node.value)) {
+                  // Support following syntax:
+                  // title: {type: [String, Number]}
+                  const types = node.value.elements.map((element) =>
+                    (element as t.Identifier).name.toLowerCase()
+                  );
+                  this.prop.type = types.length > 1 ? "typesOfArray" : types[0];
+                  this.prop.typeValue = types.length > 1 ? types : types[0];
+                } else {
+                  logger.log(
+                    `The type in ${this.key} prop only supports identifier or array expression, eg: Boolean, [String]`,
+                    "info"
+                  );
+                }
+                break;
+              case "value":
+                if (
+                  t.isStringLiteral(node.value) ||
+                  t.isBooleanLiteral(node.value) ||
+                  t.isNumericLiteral(node.value)
+                ) {
+                  this.prop.defaultValue = node.value.value;
+                } else if (
+                  t.isArrayExpression(node.value) ||
+                  t.isObjectExpression(node.value)
+                ) {
+                  this.prop.defaultValue = node.value;
+                }
+                break;
+              default:
+                break;
             }
           },
+          ObjectMethod(this: PropsThis, path: NodePath<t.ObjectMethod>) {
+            if (!t.isObjectProperty(path.parentPath.parent)) return;
 
-          // FunctionExpression: FunctionOrArrowFunctionVisitor,
-          // ArrowFunctionExpression: FunctionOrArrowFunctionVisitor
+            const gradparentKey = path.parentPath.parent.key;
+
+            if (!gradparentKey || !t.isIdentifier(gradparentKey)) return;
+            if (gradparentKey.name !== this.key) return;
+            if (!t.isIdentifier(path.node.key)) return;
+            if (path.node.key.name !== "observer") return;
+
+            // Support following syntax:
+            // {type: String, value: "title", observer(){}}
+            // {type: String, value: "title", observer:function(){}}
+            // {type: String, value: "title", observer:()=>{}}
+            let newValNode: t.Identifier | undefined;
+            let oldValNode: t.Identifier | undefined;
+            if (path.node.params[0] && t.isIdentifier(path.node.params[0])) {
+              newValNode = path.node.params[0];
+            }
+            if (path.node.params[1] && t.isIdentifier(path.node.params[1])) {
+              oldValNode = path.node.params[1];
+            }
+
+            // 函数内 this 需要处理下（this.data/this.properties）
+            const blockStatement = formatThisExpression(path, this.script);
+            let bodyExpression: t.Statement[] = [];
+            if (t.isBlockStatement(blockStatement)) {
+              bodyExpression = blockStatement.body;
+            }
+
+            this.prop.observer = true;
+            this.script.observer.push({
+              name: this.key,
+              newValNode,
+              oldValNode,
+              bodyExpression,
+            });
+          },
         };
 
-        const prop = this.script.props[key];
-
-        path.traverse(fetchPropsContent, { prop, key });
+        path.traverse(fetchPropsContent, {
+          prop: this.script.props[key],
+          key,
+          script: this.script,
+        } as PropsThis);
       } else {
         logger.log(
           `Not supports expression for the ${key} prop in props.`,
@@ -221,37 +281,3 @@ export default class ScriptVisitor {
     });
   }
 }
-
-// function FunctionOrArrowFunctionVisitor(this: any, path: NodePath) {
-//   const gradparentKey = (path.parentPath.parentPath.parent as t.Property).key;
-//   if (gradparentKey && (gradparentKey as t.Identifier).name === this.key) {
-//     // maybe 'default' or 'validator'
-//     const parentKey = (path.parent as t.Property).key;
-//     switch ((parentKey as t.Identifier).name) {
-//       case 'default':
-//         const body = (path.node as t.ArrowFunctionExpression).body;
-//         if (t.isArrayExpression(body)) {
-//           // Support following syntax:
-//           // title: {type: Array, default: () => []}
-//           this.prop.defaultValue = body;
-//         } else if (t.isBlockStatement(body)) {
-//           // Support following syntax:
-//           // title: {type: Array, default: () => { return 'hello world' }}
-//           const childNodes = body.body;
-//           // must have only one return statement
-//           if (childNodes.length === 1 && t.isReturnStatement(childNodes[0])) {
-//             this.prop.defaultValue = childNodes[0].argument;
-//           }
-//         }
-//         break;
-//       case 'validator':
-//         logger.log(
-//           `Not supports validator for the ${this.key} prop in props.`,
-//           'info'
-//         );
-//         break;
-//       default:
-//         break;
-//     }
-//   }
-// }

@@ -22,3 +22,22 @@ export const ReactComponents = [
   "Footer",
   "SVG",
 ];
+
+export const LynxComponentCycle: Record<string, string | undefined> = {
+  created: "_lynxComponentCreated", // 需要在 constructor 写明 this._lynxComponentCreated()
+  attached: "_lynxComponentAttached", // 需要在 constructor 写明 this._lynxComponentAttached()，created 之后调用
+  ready: "componentDidMount",
+  detached: "componentWillUnmount",
+  moved: undefined, // 没有对等实现
+};
+
+export const LynxCardCycle: Record<string, string | undefined> = {
+  // TODO: Card 部分 需要测试
+  onLoad: "constructor",
+  onShow: "_lynxCardOnShow", // TODO 需要在 componentDidMount -> this.GlobalEventEmitter.addListener 中监听 onShow
+  onHide: "_lynxCardOnHide", // TODO 需要在 componentDidMount -> this.GlobalEventEmitter.addListener 中监听 onHide
+  onReady: "componentDidMount", // 没有对等实现
+  onDestroy: "componentWillUnmount",
+  onDataChanged: "_lynxCardOnDataChanged", // TODO 需要在 Card 的 componentDidMount 里面增加 diff 逻辑及触发逻辑
+  onError: "componentDidCatch",
+};

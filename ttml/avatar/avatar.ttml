@@ -1,30 +1,3 @@
-<view class="intro1"
-      id="id"
-      data-id="data-id"
-      data-string="{{string}}"
-      data-boolean="{{boolean}}"
-      bindtap="handleEvent"
-      data-number="{{number}}_123"
-      data-obj="{{obj}}"
-      data-array="{{array}}"
->
-    <text>hello world</text>
-</view>
-
-<view class="intro2"
-      id="id"
-      data-id="data-id"
-      bindtap="handleEvent"
->
-    <text>hello world</text>
-</view>
-
-<view class="intro3"
-      id="id"
-      data-id="data-id"
-      data-string="{{string}}"
-      data-boolean="{{boolean}}"
-      catchtap="catchEvent"
->
-    <text>hello world</text>
+<view>
+    <text class="text">{{text}}</text>
 </view>

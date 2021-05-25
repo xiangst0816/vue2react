@@ -2,13 +2,31 @@ import * as t from "@babel/types";
 
 export type anyObject = { [name: string]: any };
 
+export type ScriptProps = {
+  type: string;
+  typeValue: string | string[];
+  defaultValue: any;
+  required: boolean;
+  validator: boolean;
+  observer: boolean;
+};
+
+// observer function info collect
+export type ScriptObserver = {
+  name: string;
+  newValNode: t.Identifier | undefined;
+  oldValNode: t.Identifier | undefined;
+  bodyExpression: t.Statement[];
+};
+
 export interface Script {
   name: string;
   data: anyObject;
-  props: anyObject;
+  props: Record<string, ScriptProps>;
   methods: anyObject;
   computed: anyObject;
-  topModuleDeclarationsAndExpressions: (t.ModuleDeclaration | t.Statement)[];
+  topStatement: (t.ModuleDeclaration | t.Statement)[];
+  observer: ScriptObserver[];
 }
 
 export interface Lepus {

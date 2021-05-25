@@ -1,7 +1,7 @@
 import { parse } from "@babel/parser";
 import traverse, { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
-
+import { LynxComponentCycle, LynxCardCycle } from "./common";
 import ScriptVisitor from "./scriptVisitor";
 
 export default function scriptIterator(script: string) {
@@ -81,40 +81,22 @@ export default function scriptIterator(script: string) {
       const name = (path.node.key as t.Identifier).name;
 
       if (parent && t.isCallExpression(parent) && isTopLevelMethod) {
-        if ((parent.callee as t.Identifier).name === "Component") {
-          const LynxComponentCycle = [
-            "created",
-            "detached",
-            "attached",
-            "ready",
-            "moved",
-            "error",
-          ];
-          if (LynxComponentCycle.includes(name)) {
-            visitor.cycleMethodHandler(path);
-          } else {
-            // Support following syntax:
-            // treat as a normal method
-            // { outerMethods () {} }
-            visitor.objectMethodHandler(path);
-          }
-        } else if ((parent.callee as t.Identifier).name === "Card") {
-          const LynxCardCycle = [
-            "onLoad",
-            "onShow",
-            "onHide",
-            "onReady",
-            "onDestroy",
-            "onFirstScreen",
-          ];
-          if (LynxCardCycle.includes(name)) {
-            visitor.cycleMethodHandler(path);
-          } else {
-            // Support following syntax:
-            // treat as a normal method
-            // { outerMethods () {} }
-            visitor.objectMethodHandler(path);
-          }
+        const lynxComponentCycleKeys = Object.keys(LynxComponentCycle);
+        const lynxCardCycleKeys = Object.keys(LynxCardCycle);
+
+        const isInComponent =
+          (parent.callee as t.Identifier).name === "Component";
+        const isInCard = (parent.callee as t.Identifier).name === "Card";
+
+        if (isInComponent && lynxComponentCycleKeys.includes(name)) {
+          visitor.componentCycleMethodHandler(path);
+        } else if (isInCard && lynxCardCycleKeys.includes(name)) {
+          visitor.cardCycleMethodHandler(path);
+        } else {
+          // Support following syntax:
+          // treat as a normal method
+          // { outerMethods () {} }
+          visitor.objectMethodHandler(path);
         }
       } else if (parent && t.isObjectProperty(parent)) {
         const parentName = (parent.key as t.Identifier).name;

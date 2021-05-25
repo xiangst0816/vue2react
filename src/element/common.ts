@@ -264,8 +264,6 @@ function collectEventAttrs(
   let attrKey: string | undefined;
   let attrValue: t.Expression | undefined;
 
-
-
   // event attr
   const eventName = name.replace(/^bind/, "").replace(/^catch/, "");
   const reactEventName = lynxEventReMap[eventName]; // tap -> onClick
@@ -321,7 +319,6 @@ export function genCommonElement(
   >
 ) {
   // Element
-  // 1 搜集元素属性；一种是表达式，一种是字面量
   let styleAttrs: t.JSXAttribute[] = [];
   let classAttrs: t.JSXAttribute[] = [];
   let commonAttrs: t.JSXAttribute[] = [];
@@ -330,7 +327,7 @@ export function genCommonElement(
 
   let attrs = vnode.attrs;
   if (attrs && attrs.length > 0) {
-    // 搜集数据
+    // Collect element attributes
     attrs.forEach((attr: anyObject) => {
       switch (attr.type) {
         case NodeType.StyleAttribute:
@@ -359,7 +356,7 @@ export function genCommonElement(
       }
     });
 
-    // event 部分处理
+    // Event part processing
     attrs.forEach((attr: anyObject) => {
       if (
         attr.type === NodeType.Attribute &&
@@ -378,7 +375,7 @@ export function genCommonElement(
   }
 
   // Support following syntax:
-  // <view> -> <View>
+  // <view id="xxx"> -> <View id="xxx">
   const tagName = _.upperFirst(_.camelCase(vnode.tag));
   return t.jSXElement(
     t.jSXOpeningElement(t.jSXIdentifier(tagName), [

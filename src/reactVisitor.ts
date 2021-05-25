@@ -16,8 +16,8 @@ export default class ReactVisitor {
     this.app = app;
   }
 
-  genTopModuleDeclarationsAndExpressions(path: NodePath<t.Program>) {
-    this.app.script.topModuleDeclarationsAndExpressions.forEach((node) => {
+  genTopStatement(path: NodePath<t.Program>) {
+    this.app.script.topStatement.forEach((node) => {
       path.node.body.unshift(node);
     });
   }
@@ -129,7 +129,7 @@ export default class ReactVisitor {
   }
 
   genClassMethods(path: NodePath<t.ClassBody>) {
-    const methods = {
+    const methods: Record<string, t.ClassMethod> = {
       ...this.app.script.methods,
       ...this.app.script.computed,
     };
@@ -210,7 +210,100 @@ export default class ReactVisitor {
       }
     }
 
-    // template
+    // [Component] observer 需要在 componentDidMount 和 componentDidUpdate
+    // 中注入对应触发函数 this._propertyObserver();
+    if (this.app.config["component"]) {
+      let componentDidMountNode = (path.node.body.find((node) => {
+        return (
+          t.isClassMethod(node) &&
+          t.isIdentifier(node.key) &&
+          node.key.name === "componentDidMount"
+        );
+      }) as any) as t.ClassMethod | undefined;
+
+      // 1. create -> componentDidMount(){}
+      if (!componentDidMountNode) {
+        componentDidMountNode = t.classMethod(
+          "method",
+          t.identifier("componentDidMount"),
+          [],
+          t.blockStatement([])
+        );
+        path.node.body.push(componentDidMountNode);
+      }
+
+      // 2. add -> componentDidMount(){this._propertyObserver(this.props, Component.defaultProps);}
+      componentDidMountNode.body.body.unshift(
+        t.expressionStatement(
+          t.callExpression(
+            t.memberExpression(
+              t.thisExpression(),
+              t.identifier("_propertyObserver")
+            ),
+            [
+              t.memberExpression(t.thisExpression(), t.identifier("props")),
+              t.memberExpression(
+                t.identifier(formatComponentName(this.app.script.name)),
+                t.identifier("defaultProps")
+              ),
+            ]
+          )
+        )
+      );
+
+      // 3. create+add -> componentDidUpdate(prevProps){this._propertyObserver(this.props, prevProps);}
+      const componentDidUpdateNode = t.classMethod(
+        "method",
+        t.identifier("componentDidUpdate"),
+        [t.identifier("prevProps")],
+        t.blockStatement([
+          t.expressionStatement(
+            t.callExpression(
+              t.memberExpression(
+                t.thisExpression(),
+                t.identifier("_propertyObserver")
+              ),
+              [
+                t.memberExpression(t.thisExpression(), t.identifier("props")),
+                t.identifier("prevProps"),
+              ]
+            )
+          ),
+        ])
+      );
+      path.node.body.push(componentDidUpdateNode);
+    }
+
+    // [Component] 中需要在 constructor 中注入 _lynxComponentCreated、_lynxComponentAttached 执行语句
+    if (this.app.config["component"]) {
+      const constructorStatementBody = (path.node.body.find(
+        (node) => t.isClassMethod(node) && node.kind === "constructor"
+      ) as t.ClassMethod).body.body;
+
+      const lynxComponentCycleInjectToConstructor = [
+        "_lynxComponentCreated",
+        "_lynxComponentAttached",
+      ];
+      path.node.body.forEach((node) => {
+        if (t.isClassMethod(node) && t.isIdentifier(node.key)) {
+          if (lynxComponentCycleInjectToConstructor.includes(node.key.name)) {
+            constructorStatementBody.push(
+              t.expressionStatement(
+                t.callExpression(
+                  t.memberExpression(
+                    t.thisExpression(),
+                    t.identifier(node.key.name)
+                  ),
+                  []
+                )
+              )
+            );
+          }
+        }
+      });
+    }
+
+    // template -> name 需要在拼好 renderXX 函数（已提前做好 ClassMethod）
     const templateCollector = this.app.template.templateCollector;
     templateCollector.forEach((template) => {
       path.node.body.push(template);
@@ -314,6 +407,63 @@ export default class ReactVisitor {
     );
 
     path.node.body.push(render);
+  }
+
+  genPropertyObserverMethods(path: NodePath<t.ClassBody>) {
+    if (!this.app.config["component"]) return;
+
+    // if statements
+    const observerList: t.IfStatement[] = [];
+    this.app.script.observer.forEach((observer) => {
+      const { name, bodyExpression, newValNode, oldValNode } = observer;
+      const propsChangeStatement = t.ifStatement(
+        t.binaryExpression(
+          "!==",
+          t.memberExpression(t.identifier("newProps"), t.identifier(name)),
+          t.memberExpression(t.identifier("prevProps"), t.identifier(name))
+        ),
+        t.blockStatement([
+          // const newVal = newProps['text'];
+          newValNode
+            ? t.variableDeclaration("let", [
+                t.variableDeclarator(
+                  newValNode,
+                  t.memberExpression(
+                    t.identifier("newProps"),
+                    t.identifier(name)
+                  )
+                ),
+              ])
+            : t.emptyStatement(),
+          // const oldVal = prevProps['text'];
+          oldValNode
+            ? t.variableDeclaration("let", [
+                t.variableDeclarator(
+                  oldValNode,
+                  t.memberExpression(
+                    t.identifier("prevProps"),
+                    t.identifier(name)
+                  )
+                ),
+              ])
+            : t.emptyStatement(),
+          ...bodyExpression,
+        ])
+      );
+      observerList.push(propsChangeStatement);
+    });
+
+    // outer wrapper
+    // _propertyObserver(newProps, prevProps) {
+    //   ... if statements
+    // }
+    const outerWrapper = t.classMethod(
+      "method",
+      t.identifier("_propertyObserver"),
+      [t.identifier("newProps"), t.identifier("prevProps")],
+      t.blockStatement(observerList)
+    );
+    path.node.body.push(outerWrapper);
   }
 
   genConfigProperty(path: NodePath<t.ClassBody>) {

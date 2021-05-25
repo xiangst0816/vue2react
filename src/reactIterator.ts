@@ -12,7 +12,7 @@ export default function reactIterator(
 
   traverse(rast, {
     Program(path: NodePath<t.Program>) {
-      visitor.genTopModuleDeclarationsAndExpressions(path); // no.3
+      visitor.genTopStatement(path); // no.3
       visitor.genLepusImports(path, visitor.app.lepus); // no.2
       visitor.genImports(path, hasStyle); // no.1
       visitor.genComments(path); // no.0
@@ -20,6 +20,7 @@ export default function reactIterator(
     },
 
     ClassBody(path: NodePath<t.ClassBody>) {
+      visitor.genPropertyObserverMethods(path);
       visitor.genConfigProperty(path);
       visitor.genClassMethods(path);
       visitor.genRenderMethods(path);

@@ -1,14 +1,7 @@
 {
   "component": true,
-  "aaa": true,
-  "bbb": true,
   "usingComponents": {},
   "usingTemplateAPI": {
-    "templateFunctions": [
-      {
-        "path": "./avatar.lepus",
-        "name": "_styleFn"
-      }
-    ]
+
   }
 }
