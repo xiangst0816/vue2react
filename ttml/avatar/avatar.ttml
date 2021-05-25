@@ -1,3 +1,10 @@
+<!--comment properties-->
 <view>
-    <text class="text">{{text}}</text>
+    <!-- slot -->
+    <slot name="left"></slot>
+    <slot name="content"></slot>
+    <slot></slot>
+    <slot name="right"></slot>
+    <slot name="drag-item-id-{{item.id}}"></slot>
 </view>
+

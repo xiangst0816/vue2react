@@ -16,7 +16,7 @@ export function genSlotElement(
   if (!slotNameAttr || slotNameAttr.length === 0) {
     // Support following syntax:
     // <slot></slot> -> {this.props.children}
-    slotNameElement = t.stringLiteral("children");
+    slotNameElement = t.identifier("children");
   } else {
     // Support following syntax:
     // <slot name="right"></slot> -> {this.props['renderRight']}
@@ -41,27 +41,35 @@ export function genSlotElement(
     );
   }
 
-  // 直接返回 jsx 表达式
-  return (t.jSXExpressionContainer(
-    t.memberExpression(
-      t.memberExpression(t.thisExpression(), t.identifier("props"), false),
-      slotNameElement,
-      true
-    )
-  ) as any) as t.JSXElement;
+  if (t.isStringLiteral(slotNameElement)) {
+    slotNameElement = t.identifier(slotNameElement.value);
+  }
 
-  // 进行包裹
-  // return t.jSXElement(
-  //   t.jSXOpeningElement(t.jSXIdentifier("View"), []),
-  //   t.jSXClosingElement(t.jSXIdentifier("View")),
-  //   [
-  //     t.jSXExpressionContainer(
-  //       t.memberExpression(
-  //         t.memberExpression(t.thisExpression(), t.identifier("props"), false),
-  //         slotNameElement,
-  //         true
-  //       )
-  //     ),
-  //   ]
-  // );
+  if (t.isIdentifier(slotNameElement)) {
+    return (t.jSXExpressionContainer(
+      t.memberExpression(
+        t.memberExpression(t.thisExpression(), t.identifier("props"), false),
+        slotNameElement,
+        false
+      )
+    ) as any) as t.JSXElement;
+  }
+
+  // 这种模式不支持，会影响 react-lynx 的解析
+  // <slot name="drag-item-id-{{item.id}}"></slot>
+  let slotSegment = "";
+  (slotNameAttr.children || []).forEach((node: any) => {
+    if (node.type === NodeType.Mustache) {
+      slotSegment += `{{${node.text}}`;
+    } else if (node.type === NodeType.Text) {
+      slotSegment += node.text;
+    }
+  });
+
+  const msg = `/* Not Support: <slot name="${slotSegment}"> */`;
+
+  console.log(msg); // TODO: DOC
+  return (t.jSXExpressionContainer(
+    t.stringLiteral(msg)
+  ) as any) as t.JSXElement;
 }
