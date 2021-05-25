@@ -255,8 +255,8 @@ function collectCommonAttrs(
 
 function collectEventAttrs(
   attr: anyObject,
-  attrsCollector: Readonly<Set<string>>,
-  eventsCollector: Readonly<EventsCollector>,
+  attrsCollector: Set<string>,
+  eventsCollector: EventsCollector,
   eventAttrs: t.JSXAttribute[],
   dataAttrs: t.ObjectProperty[]
 ) {
@@ -283,16 +283,28 @@ function collectEventAttrs(
     const node = attr.children[0];
     // Mark: 事件这里的 text 表示一个标识符, 不支持动态模式
     attrsCollector.add(node.text);
-    // attrValue = t.identifier(node.text);
-    attrValue = t.callExpression(t.identifier(node.text), [
-      t.objectExpression(dataAttrs),
-    ]);
+    const withData = dataAttrs.length > 0;
+
+    if (withData) {
+      // <View onClick={this.onClick({a:b})}></View>
+      attrValue = t.callExpression(
+        t.memberExpression(t.thisExpression(), t.identifier(node.text)),
+        [t.objectExpression(dataAttrs)]
+      );
+    } else {
+      // <View onClick={this.onClick}></View>
+      attrValue = t.memberExpression(
+        t.thisExpression(),
+        t.identifier(node.text)
+      );
+    }
 
     // 记录 事件处理函数名称 及 是否 catch；
     if (!eventsCollector.has(name)) {
       eventsCollector.set(node.text, {
         name: node.text,
         stopPropagation: Boolean(/^catch/.test(name)),
+        withData: withData,
       });
     }
   } else {
@@ -313,10 +325,8 @@ function collectEventAttrs(
 
 export function genCommonElement(
   vnode: anyObject,
-  attrsCollector: Readonly<Set<string>>,
-  eventsCollector: Readonly<
-    Map<string, { name: string; stopPropagation: boolean }>
-  >
+  attrsCollector: Set<string>,
+  eventsCollector: EventsCollector
 ) {
   // Element
   let styleAttrs: t.JSXAttribute[] = [];

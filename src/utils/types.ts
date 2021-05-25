@@ -37,7 +37,7 @@ export interface Lepus {
 
 export type EventsCollector = Map<
   string,
-  { name: string; stopPropagation: boolean }
+  { name: string; stopPropagation: boolean; withData: boolean }
 >;
 
 export interface Template {

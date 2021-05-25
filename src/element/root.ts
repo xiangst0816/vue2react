@@ -55,17 +55,19 @@ export function genRootElement(
 
   // 根节点自动加 onClick 属性；外部绑定 bindtap 这里通过这个方式触发
   // <View onClick={this.props.onClick}>{}</View>
-  element.openingElement.attributes.push(
-    t.jSXAttribute(
-      t.jSXIdentifier("onClick"),
-      t.jSXExpressionContainer(
-        t.memberExpression(
-          t.memberExpression(t.thisExpression(), t.identifier("props")),
-          t.identifier("onClick")
+  if(!element.openingElement.attributes.find(node => node.name.name === 'onClick')){
+    element.openingElement.attributes.push(
+        t.jSXAttribute(
+            t.jSXIdentifier("onClick"),
+            t.jSXExpressionContainer(
+                t.memberExpression(
+                    t.memberExpression(t.thisExpression(), t.identifier("props")),
+                    t.identifier("onClick")
+                )
+            )
         )
-      )
-    )
-  );
+    );
+  }
 
   return element;
 }

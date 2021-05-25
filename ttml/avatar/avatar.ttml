@@ -1,5 +1,6 @@
-<view>
-    <view tt:if="{{disabled}}" class="{{name}}-mask" catchtap="onCatchTap" bindtouchstart="onTouchStart"
-          bindtouchend="onTouchEnd"></view>
-    <view tt:elif class="{{name}}-mask" bindtouchstart="onTouchStart" bindtouchend="onTouchEnd"></view>
+<view catchtap="catchtapHandler">
+    <text>123</text>
+</view>
+<view data-id="123" catchtap="dataHandler">
+    <text>123</text>
 </view>

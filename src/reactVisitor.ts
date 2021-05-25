@@ -157,9 +157,14 @@ export default class ReactVisitor {
           //   e.currentTarget.dataset = _dataset;
           //   // .rest statement
           // }
+          // eventHandler = (e) => {
+          //   // maybe e.stopPropagation()
+          //   // .rest statement
+          // }
           const stopPropagation = Boolean(
             eventsCollector.get(name)?.stopPropagation
           );
+          const withData = Boolean(eventsCollector.get(name)?.withData);
           const method = methods[name] as t.ClassMethod;
           const eventKey = method.key as t.Identifier;
           const eventParam =
@@ -182,36 +187,43 @@ export default class ReactVisitor {
               : t.emptyStatement();
 
           // e.currentTarget.dataset = _dataset;
-          const datasetExpressionStatement = eventParam
-            ? t.expressionStatement(
-                t.assignmentExpression(
-                  "=",
-                  t.memberExpression(
+          const datasetExpressionStatement =
+            eventParam && withData
+              ? t.expressionStatement(
+                  t.assignmentExpression(
+                    "=",
                     t.memberExpression(
-                      eventParam,
-                      t.identifier("currentTarget")
+                      t.memberExpression(
+                        eventParam,
+                        t.identifier("currentTarget")
+                      ),
+                      t.identifier("dataset")
                     ),
-                    t.identifier("dataset")
-                  ),
-                  t.identifier("_dataset")
+                    t.identifier("_dataset")
+                  )
                 )
-              )
-            : t.emptyStatement();
+              : t.emptyStatement();
 
-          const eventHandlerClassProperty = t.classProperty(
-            eventKey,
-            t.arrowFunctionExpression(
-              [t.identifier("_dataset")],
-              t.arrowFunctionExpression(
-                eventParam ? [eventParam] : [],
-                t.blockStatement([
-                  stopPropagationExpressionStatement,
-                  datasetExpressionStatement,
-                  ...eventBody,
-                ])
-              )
-            )
+          // (e) => { ... }
+          const handler = t.arrowFunctionExpression(
+            eventParam ? [eventParam] : [],
+            t.blockStatement([
+              stopPropagationExpressionStatement,
+              datasetExpressionStatement,
+              ...eventBody,
+            ])
           );
+          let eventHandlerClassProperty: t.ClassProperty;
+          if (withData) {
+            // xx: (_dataset) => (e) => { ... }
+            eventHandlerClassProperty = t.classProperty(
+              eventKey,
+              t.arrowFunctionExpression([t.identifier("_dataset")], handler)
+            );
+          } else {
+            // xx: (e) => { ... }
+            eventHandlerClassProperty = t.classProperty(eventKey, handler);
+          }
 
           path.node.body.push(eventHandlerClassProperty);
         } else {
@@ -342,9 +354,16 @@ export default class ReactVisitor {
           t.objectProperty(t.identifier(attr), t.identifier(attr), false, true)
         );
       } else if (this.app.script.methods[attr]) {
-        methodProperties.push(
-          t.objectProperty(t.identifier(attr), t.identifier(attr), false, true)
-        );
+        if (!this.app.template.eventsCollector.has(attr)) {
+          methodProperties.push(
+            t.objectProperty(
+              t.identifier(attr),
+              t.identifier(attr),
+              false,
+              true
+            )
+          );
+        }
       } else if (this.app.script.computed[attr]) {
         computed.push(attr);
       } else {
