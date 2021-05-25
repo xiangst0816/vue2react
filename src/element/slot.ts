@@ -83,7 +83,5 @@ export function genSlotElement(
   const msg = `/* Not Support: <slot name="${slotSegment}"> */`;
 
   console.log(msg); // TODO: DOC
-  return (t.jSXExpressionContainer(
-    t.stringLiteral(msg)
-  ) as any) as t.JSXElement;
+  return (t.jSXEmptyExpression() as any) as t.JSXElement;
 }

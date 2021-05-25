@@ -21,10 +21,10 @@ export type ScriptObserver = {
 
 export interface Script {
   name: string;
-  data: anyObject;
+  data: anyObject; // todo: to map
   props: Map<string, ScriptProps>;
-  methods: anyObject;
-  computed: anyObject;
+  methods: anyObject; // todo: to map
+  computed: anyObject; // todo: to map
   topStatement: (t.ModuleDeclaration | t.Statement)[];
   observer: ScriptObserver[];
 }

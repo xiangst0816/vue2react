@@ -90,13 +90,11 @@ export default class ReactVisitor {
     }
 
     // add 'import PropTypes from "PropType";'
-    if (this.app.script.props.size) {
-      const importPropTypes = t.importDeclaration(
-        [t.importDefaultSpecifier(t.identifier("PropTypes"))],
-        t.stringLiteral("prop-types")
-      );
-      path.node.body.unshift(importPropTypes);
-    }
+    const importPropTypes = t.importDeclaration(
+      [t.importDefaultSpecifier(t.identifier("PropTypes"))],
+      t.stringLiteral("prop-types")
+    );
+    path.node.body.unshift(importPropTypes);
 
     // add 'import { Text } from '@byted-lynx/react-components';'
     const importReactComponent = t.importDeclaration(
@@ -124,9 +122,21 @@ export default class ReactVisitor {
 
   genStaticProps(path: NodePath<t.Program>) {
     const props = new Map([
+      [
+        "onClick",
+        {
+          type: "func",
+          typeValue: "func",
+          defaultValue: null,
+          required: false,
+          validator: false,
+          observer: false,
+        },
+      ],
       ...this.app.script.props,
       ...this.app.template.slotsCollector,
     ]);
+
     path.node.body.push(genPropTypes(props, this.app.script.name));
     path.node.body.push(genDefaultProps(props, this.app.script.name));
   }
@@ -139,7 +149,7 @@ export default class ReactVisitor {
     const eventsCollector = this.app.template.eventsCollector;
 
     for (const name in methods) {
-      if (methods.hasOwnProperty(name)) {
+      if (methods[name]) {
         if (eventsCollector.has(name)) {
           // 绑定事件的函数
           // eventHandler = (_dataset) => (e) => {

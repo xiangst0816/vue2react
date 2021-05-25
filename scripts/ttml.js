@@ -11,11 +11,11 @@ const {
   formatCode,
 } = require("../dist/index");
 
-const name = "button";
+const name = "avatar";
 const distDir = path.resolve(__dirname, name);
 
-// const baseDir = path.resolve(__dirname, `../ttml/${name}`);
-const baseDir = `/Users/xiangst/bytedance/lynx-mono/packages/lynx-ui/components/${name}`;
+const baseDir = path.resolve(__dirname, `../ttml/${name}`);
+// const baseDir = `/Users/xiangst/bytedance/lynx-mono/packages/lynx-ui/components/${name}`;
 
 const scriptPath = path.resolve(baseDir, `${name}.js`);
 const stylePath = path.resolve(baseDir, `${name}.ttss`);

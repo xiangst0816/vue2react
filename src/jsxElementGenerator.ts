@@ -160,9 +160,7 @@ export default function jsxElementGenerator(
       wrappedElement = t.jSXExpressionContainer(expression);
       break;
     case NodeType.Comment:
-      wrappedElement = t.jSXExpressionContainer(
-        t.stringLiteral(`/*${vnode.text}*/`)
-      );
+      wrappedElement = t.jSXEmptyExpression() as any;
       break;
     default:
       debugger;

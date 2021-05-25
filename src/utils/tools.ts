@@ -5,23 +5,23 @@ import _ from "lodash";
 import { ScriptProps } from "./types";
 
 // Life-cycle methods relations mapping
-export const cycle: { [name: string]: any } = {
-  // Component 部分
-  created: "componentCreated", // * TODO 需要在 constructor 写明 this.componentCreated()
-  attached: "componentAttached", // * TODO 需要在 constructor 写明 this.componentAttached()，created 之后调用
-  ready: "componentDidMount",
-  detached: "componentWillUnmount",
-  error: "componentDidCatch",
-  moved: "componentMoved", // 没有对等实现
-  // Card 部分
-  // TODO: 处理 Card 的映射关系
-
-  // created: 'componentWillMount',
-  // mounted: 'componentDidMount',
-  // updated: 'componentDidUpdate',
-  // beforeDestroy: 'componentWillUnmount',
-  // errorCaptured: 'componentDidCatch'
-};
+// export const cycle: { [name: string]: any } = {
+//   // Component 部分
+//   created: "componentCreated", // *  需要在 constructor 写明 this.componentCreated()
+//   attached: "componentAttached", // *  需要在 constructor 写明 this.componentAttached()，created 之后调用
+//   ready: "componentDidMount",
+//   detached: "componentWillUnmount",
+//   error: "componentDidCatch",
+//   moved: "componentMoved", // 没有对等实现
+//   // Card 部分
+//   // : 处理 Card 的映射关系
+//
+//   // created: 'componentWillMount',
+//   // mounted: 'componentDidMount',
+//   // updated: 'componentDidUpdate',
+//   // beforeDestroy: 'componentWillUnmount',
+//   // errorCaptured: 'componentDidCatch'
+// };
 
 function getFormatPropType(type: string) {
   return type === "boolean" ? "bool" : type;
@@ -105,6 +105,9 @@ export function genDefaultProps(props: Map<string, ScriptProps>, name: string) {
           val = t.objectExpression(obj.defaultValue.properties);
           break;
         case "element":
+          val = t.nullLiteral();
+          break;
+        case "func":
           val = t.nullLiteral();
           break;
         default:

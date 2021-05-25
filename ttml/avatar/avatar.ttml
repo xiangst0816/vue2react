@@ -1,10 +1,5 @@
-<!--comment properties-->
 <view>
-    <!-- slot -->
-    <slot name="left"></slot>
-    <slot name="content"></slot>
-    <slot></slot>
-    <slot name="right"></slot>
-    <slot name="drag-item-id-{{item.id}}"></slot>
+    <view tt:if="{{disabled}}" class="{{name}}-mask" catchtap="onCatchTap" bindtouchstart="onTouchStart"
+          bindtouchend="onTouchEnd"></view>
+    <view tt:elif class="{{name}}-mask" bindtouchstart="onTouchStart" bindtouchend="onTouchEnd"></view>
 </view>
-

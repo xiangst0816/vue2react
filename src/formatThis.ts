@@ -22,7 +22,7 @@ function getThisIdentify(script: Script, key: string) {
 
 const replaceThisExpression = {
   ThisExpression(
-    this: any,
+    this: {script:Script},
     thisExpressionNodePath: NodePath<t.ThisExpression>
   ) {
     // here is -> this.xxx
@@ -60,9 +60,9 @@ const replaceThisExpression = {
           ) {
             let name: string =
               thisExpressionNodePath.parentPath.parent.property.name;
-            if (this.script.data.hasOwnProperty(name)) {
+            if (this.script.data[name]) {
               replacedName = "state";
-            } else if (this.script.props.hasOwnProperty(name)) {
+            } else if (this.script.props.has(name)) {
               replacedName = "props";
             }
           }
