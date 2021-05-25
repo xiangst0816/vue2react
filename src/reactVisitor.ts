@@ -162,10 +162,12 @@ export default class ReactVisitor {
           );
           const method = methods[name] as t.ClassMethod;
           const eventKey = method.key as t.Identifier;
-          const eventParam = method.params[0] as t.Identifier | undefined;
+          const eventParam =
+            (method.params[0] as t.Identifier) || t.identifier("_event");
           const eventBody = method.body.body;
 
           // e.stopPropagation()
+          // 如果本身是 catch，但是 事件 中可能没有 event 这个参数，需要自己补充上，强制执行 stopPropagation
           const stopPropagationExpressionStatement =
             eventParam && stopPropagation
               ? t.expressionStatement(
