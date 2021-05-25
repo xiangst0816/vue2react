@@ -36,7 +36,7 @@ export const LynxCardCycle: Record<string, string | undefined> = {
   onLoad: "constructor",
   onShow: "_lynxCardOnShow", // TODO 需要在 componentDidMount -> this.GlobalEventEmitter.addListener 中监听 onShow
   onHide: "_lynxCardOnHide", // TODO 需要在 componentDidMount -> this.GlobalEventEmitter.addListener 中监听 onHide
-  onReady: "componentDidMount", // 没有对等实现
+  onReady: "componentDidMount",
   onDestroy: "componentWillUnmount",
   onDataChanged: "_lynxCardOnDataChanged", // TODO 需要在 Card 的 componentDidMount 里面增加 diff 逻辑及触发逻辑
   onError: "componentDidCatch",

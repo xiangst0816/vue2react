@@ -80,9 +80,9 @@ export default class ReactVisitor {
         });
     }
 
-    // add 'import ./index.css'
+    // add 'import ./index.scss'
     if (hasStyle) {
-      const importCSS = t.importDeclaration([], t.stringLiteral("./index.css"));
+      const importCSS = t.importDeclaration([], t.stringLiteral("./index.scss"));
       path.node.body.unshift(importCSS);
     }
 
@@ -166,9 +166,6 @@ export default class ReactVisitor {
                 )
               : t.emptyStatement();
 
-          if (!eventParam) {
-            debugger;
-          }
           // e.currentTarget.dataset = _dataset;
           const datasetExpressionStatement = eventParam
             ? t.expressionStatement(

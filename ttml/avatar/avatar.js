@@ -20,8 +20,8 @@ Component({
   },
   created(){}, // Function  否  在组件创建时使用；此时不能调用 setData
   attached(){}, // Function  否  在 created 之后执行
-  ready(){}, // Function  否  已支持，在 attached 之后执行
-  moved(){}, // Function  否  在组件实例被移动到节点树另一个位置时执行
-  detached(){}, // Function  否  组件移除时候触发
+  // ready(){}, // Function  否  已支持，在 attached 之后执行
+  // moved(){}, // Function  否  在组件实例被移动到节点树另一个位置时执行
+  // detached(){}, // Function  否  组件移除时候触发
   xxx() {},
 });

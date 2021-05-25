@@ -97,7 +97,7 @@ export function transformFile(src: string, targetPath: string, dist: string) {
     const styleContent = styles
       .map((style: anyObject) => style.content.replace(/^\s+|\s+$/g, ""))
       .join("\n");
-    fs.writeFileSync(path.resolve(dist, "index.css"), styleContent);
+    fs.writeFileSync(path.resolve(dist, "index.scss"), styleContent);
   }
 }
 
@@ -122,6 +122,6 @@ export function transformFile2(
     const styleContent = styles
       .map((style: anyObject) => style.content.replace(/^\s+|\s+$/g, ""))
       .join("\n");
-    fs.writeFileSync(path.resolve(distDir, "index.css"), styleContent);
+    fs.writeFileSync(path.resolve(distDir, "index.scss"), styleContent);
   }
 }
