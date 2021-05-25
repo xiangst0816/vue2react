@@ -1,4 +1,4 @@
-import { anyObject, NodeType } from "../utils/types";
+import { anyObject, NodeType, ScriptProps } from "../utils/types";
 import * as t from "@babel/types";
 import { getCollectedProperty } from "../utils/generatorUtils";
 import _ from "lodash";
@@ -6,7 +6,8 @@ import { transformTextToExpression } from "../utils/tools";
 
 export function genSlotElement(
   vnode: anyObject,
-  attrsCollector: Readonly<Set<string>>
+  attrsCollector: Readonly<Set<string>>,
+  slotsCollector: Readonly<Map<string, ScriptProps>>
 ) {
   let slotNameElement;
   const slotNameAttr = (vnode.attrs || []).find(
@@ -46,6 +47,19 @@ export function genSlotElement(
   }
 
   if (t.isIdentifier(slotNameElement)) {
+    // slot 信息搜集
+    const renderName = slotNameElement.name; // renderXx
+    if (!slotsCollector.has(renderName)) {
+      slotsCollector.set(renderName, {
+        type: "element",
+        typeValue: "element",
+        defaultValue: null,
+        required: false,
+        validator: false,
+        observer: false,
+      });
+    }
+
     return (t.jSXExpressionContainer(
       t.memberExpression(
         t.memberExpression(t.thisExpression(), t.identifier("props"), false),

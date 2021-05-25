@@ -1,6 +1,11 @@
 import * as t from "@babel/types";
 import { getCollectedProperty } from "../utils/generatorUtils";
-import { anyObject, EventsCollector, NodeType } from "../utils/types";
+import {
+  anyObject,
+  EventsCollector,
+  NodeType,
+  ScriptProps,
+} from "../utils/types";
 import jsxElementGenerator from "../jsxElementGenerator";
 import { transformTextToExpression } from "../utils/tools";
 
@@ -9,9 +14,10 @@ export function injectElseCommand(
   vnode: anyObject,
   element: t.JSXElement,
   parentElement: t.JSXElement | undefined,
-  attrsCollector: Readonly<Set<string>>,
-  templateCollector: Readonly<Set<t.ClassMethod>>,
-  eventsCollector: Readonly<EventsCollector>
+  attrsCollector: Set<string>,
+  templateCollector: Set<t.ClassMethod>,
+  eventsCollector: EventsCollector,
+  slotsCollector: Map<string, ScriptProps>
 ) {
   // Support following syntax:
   // <div tt:if="{show}"/><div tt:else/> -> {show ? <div/> : <div/>}
@@ -111,7 +117,8 @@ export function injectElseCommand(
         element,
         attrsCollector,
         templateCollector,
-        eventsCollector
+        eventsCollector,
+        slotsCollector
       );
     });
   }

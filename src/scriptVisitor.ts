@@ -13,7 +13,7 @@ export default class ScriptVisitor {
       topStatement: [],
       name: "",
       data: {},
-      props: {},
+      props: new Map(),
       methods: {},
       computed: {},
       observer: [],
@@ -28,8 +28,7 @@ export default class ScriptVisitor {
   }
 
   nameHandler(path: NodePath<t.ObjectProperty>) {
-    const name = (path.node.value as t.StringLiteral).value;
-    this.script.name = name;
+    this.script.name = (path.node.value as t.StringLiteral).value;
   }
 
   dataHandler(body: t.Node[], isObject: boolean) {
@@ -69,15 +68,16 @@ export default class ScriptVisitor {
 
       // TODO：onDataChanged；看文档, 这里只做数据搜集；
 
-      const classMethod = t.classMethod(
+      this.script.methods[reactCycleName] = t.classMethod(
         "method",
         t.identifier(reactCycleName),
         params,
         blockStatement
       );
-      this.script.methods[reactCycleName] = classMethod;
     } else {
-      console.log(`ttml 卡片生命周期函数 ${ttmlCycleName} 没有对等的 ReactLynx 实现！`);
+      console.log(
+        `ttml 卡片生命周期函数 ${ttmlCycleName} 没有对等的 ReactLynx 实现！`
+      );
     }
   }
 
@@ -88,15 +88,16 @@ export default class ScriptVisitor {
       const params: t.Identifier[] = [];
       // 函数内 this 需要处理下（this.data/this.properties）
       const blockStatement = formatThisExpression(path, this.script);
-      const classMethod = t.classMethod(
+      this.script.methods[reactCycleName] = t.classMethod(
         "method",
         t.identifier(reactCycleName),
         params,
         blockStatement
       );
-      this.script.methods[reactCycleName] = classMethod;
     } else {
-      console.log(`ttml 组件生命周期函数 ${ttmlCycleName} 没有对等的 ReactLynx 实现！`);
+      console.log(
+        `ttml 组件生命周期函数 ${ttmlCycleName} 没有对等的 ReactLynx 实现！`
+      );
     }
   }
 
@@ -105,13 +106,12 @@ export default class ScriptVisitor {
     let params = path.node.params;
     // 函数内 this 需要处理下（this.data/this.properties）
     const blockStatement = formatThisExpression(path, this.script);
-    const classMethod = t.classMethod(
+    this.script.methods[name] = t.classMethod(
       "method",
       t.identifier(name),
       params,
       blockStatement
     );
-    this.script.methods[name] = classMethod;
   }
 
   computedHandler(path: NodePath<t.ObjectMethod>) {
@@ -134,42 +134,41 @@ export default class ScriptVisitor {
       if (t.isIdentifier(node.value)) {
         // Support following syntax:
         // props: { title: Boolean }
-        this.script.props[key] = {
+        this.script.props.set(key, {
           type: node.value.name.toLowerCase(),
           typeValue: node.value.name.toLowerCase(),
           defaultValue: undefined,
           required: false,
           validator: false,
           observer: false,
-        };
+        });
       } else if (t.isArrayExpression(node.value)) {
         // Support following syntax:
         // props: { title: [Boolean, String] }
         const types = node.value.elements.map((element) =>
           (element as t.Identifier).name.toLowerCase()
         );
-
-        this.script.props[key] = {
+        this.script.props.set(key, {
           type: types.length > 1 ? "typesOfArray" : types[0],
           typeValue: types.length > 1 ? types : types[0],
           defaultValue: undefined,
           required: false,
           validator: false,
           observer: false,
-        };
+        });
       } else if (t.isObjectExpression(node.value)) {
         // Support following syntax:
         // title: {type: String, value: "title", observer(){}}
         // or
         // title: {type: [String, Number], value: "title"}
-        this.script.props[key] = {
+        this.script.props.set(key, {
           type: "",
           typeValue: "",
           defaultValue: undefined,
           required: false,
           validator: false,
           observer: false,
-        };
+        });
 
         interface PropsThis {
           key: string;
@@ -268,7 +267,7 @@ export default class ScriptVisitor {
         };
 
         path.traverse(fetchPropsContent, {
-          prop: this.script.props[key],
+          prop: this.script.props.get(key),
           key,
           script: this.script,
         } as PropsThis);

@@ -97,7 +97,14 @@ export function collectTemplateRenderMethods(
     const {
       ast: templateJsxElement,
       attrsCollector: _attrsCollector,
-    } = jsxElementGenerator(templateNode, undefined, new Set(), new Set(), new Map());
+    } = jsxElementGenerator(
+      templateNode,
+      undefined,
+      new Set(),
+      new Set(),
+      new Map(),
+      new Map()
+    );
 
     let dataProperties: t.ObjectProperty[] = [
       ...(_attrsCollector as Set<string>),
@@ -114,7 +121,9 @@ export function collectTemplateRenderMethods(
           // data mapping
           t.variableDeclaration("const", [
             t.variableDeclarator(
-              t.objectPattern(dataProperties as any as t.AssignmentProperty[]), // TODO: check type
+              t.objectPattern(
+                (dataProperties as any) as t.AssignmentProperty[]
+              ), // TODO: check type
               t.identifier("data")
             ),
           ]),

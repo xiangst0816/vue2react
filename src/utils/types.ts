@@ -22,7 +22,7 @@ export type ScriptObserver = {
 export interface Script {
   name: string;
   data: anyObject;
-  props: Record<string, ScriptProps>;
+  props: Map<string, ScriptProps>;
   methods: anyObject;
   computed: anyObject;
   topStatement: (t.ModuleDeclaration | t.Statement)[];
@@ -42,9 +42,10 @@ export type EventsCollector = Map<
 
 export interface Template {
   ast: t.JSXElement | undefined;
-  attrsCollector: Readonly<Set<string>>;
-  templateCollector: Readonly<Set<t.ClassMethod>>;
-  eventsCollector: Readonly<EventsCollector>;
+  attrsCollector: Set<string>;
+  templateCollector: Set<t.ClassMethod>;
+  eventsCollector: EventsCollector;
+  slotsCollector: Map<string, ScriptProps>;
 }
 
 export interface App {

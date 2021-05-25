@@ -1,12 +1,18 @@
-import { anyObject, EventsCollector, NodeType } from "../utils/types";
+import {
+  anyObject,
+  EventsCollector,
+  NodeType,
+  ScriptProps,
+} from "../utils/types";
 import * as t from "@babel/types";
 import jsxElementGenerator from "../jsxElementGenerator";
 
 export function genRootElement(
   vnode: anyObject,
-  attrsCollector: Readonly<Set<string>>, // 用于在 render 中设置 state/props 等的映射
-  templateCollector: Readonly<Set<t.ClassMethod>>,
-  eventsCollector: Readonly<EventsCollector>
+  attrsCollector: Set<string>, // 用于在 render 中设置 state/props 等的映射
+  templateCollector: Set<t.ClassMethod>,
+  eventsCollector: EventsCollector,
+  slotsCollector: Map<string, ScriptProps>
 ): t.JSXElement {
   let element = t.jSXElement(
     t.jSXOpeningElement(t.jSXIdentifier("View"), []),
@@ -24,7 +30,8 @@ export function genRootElement(
       element,
       attrsCollector,
       templateCollector,
-      eventsCollector
+      eventsCollector,
+      slotsCollector
     );
     if (!_element) throw new Error("根节点解析异常！");
 
@@ -44,7 +51,8 @@ export function genRootElement(
         element,
         attrsCollector,
         templateCollector,
-        eventsCollector
+        eventsCollector,
+        slotsCollector
       );
     });
   }

@@ -1,5 +1,11 @@
 import * as t from "@babel/types";
-import { anyObject, Template, NodeType, EventsCollector } from "./utils/types";
+import {
+  anyObject,
+  Template,
+  NodeType,
+  EventsCollector,
+  ScriptProps,
+} from "./utils/types";
 import { genSlotElement } from "./element/slot";
 import {
   collectTemplateRenderMethods,
@@ -18,9 +24,10 @@ import { EmptyTag } from "./common";
 export default function jsxElementGenerator(
   vnode: anyObject,
   parentElement: t.JSXElement | undefined,
-  attrsCollector: Readonly<Set<string>>, // 用于在 render 中设置 state/props 等的映射
-  templateCollector: Readonly<Set<t.ClassMethod>>, // 用于在 render 中设置 XxTemplateComponent 等子模板
-  eventsCollector: Readonly<EventsCollector> // 用于在 class 中设置 事件处理函数，stopPropagation+bindThis
+  attrsCollector: Set<string>, // 用于在 render 中设置 state/props 等的映射
+  templateCollector: Set<t.ClassMethod>, // 用于在 render 中设置 XxTemplateComponent 等子模板
+  eventsCollector: EventsCollector, // 用于在 class 中设置 事件处理函数，stopPropagation+bindThis
+  slotsCollector: Map<string, ScriptProps> // 用于搜集 slot 信息，将 slot-name 转为 renderXx props
 ): Template {
   let element: t.JSXElement | undefined = undefined; // 当前 element
   let wrappedElement:
@@ -37,14 +44,15 @@ export default function jsxElementGenerator(
         vnode,
         attrsCollector,
         templateCollector,
-        eventsCollector
+        eventsCollector,
+        slotsCollector
       );
       wrappedElement = element;
       break;
     case NodeType.Element:
       switch (vnode.tag) {
         case "slot":
-          element = genSlotElement(vnode, attrsCollector);
+          element = genSlotElement(vnode, attrsCollector, slotsCollector);
           wrappedElement = element;
           break;
         case "template":
@@ -95,7 +103,8 @@ export default function jsxElementGenerator(
                   parentElement,
                   attrsCollector,
                   templateCollector,
-                  eventsCollector
+                  eventsCollector,
+                  slotsCollector
                 );
 
                 // else/elif 不需要独立的 element；这里直接返回
@@ -104,6 +113,7 @@ export default function jsxElementGenerator(
                   attrsCollector,
                   templateCollector,
                   eventsCollector,
+                  slotsCollector,
                 };
               case "for":
                 wrappedElement = wrapForCommand(
@@ -135,7 +145,8 @@ export default function jsxElementGenerator(
             element,
             attrsCollector,
             templateCollector,
-            eventsCollector
+            eventsCollector,
+            slotsCollector
           );
         });
       }
@@ -174,5 +185,6 @@ export default function jsxElementGenerator(
     attrsCollector,
     templateCollector,
     eventsCollector,
+    slotsCollector,
   };
 }

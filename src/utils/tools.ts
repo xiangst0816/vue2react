@@ -2,6 +2,7 @@ import * as t from "@babel/types";
 import * as parser from "@babel/parser";
 import traverse from "@babel/traverse";
 import _ from "lodash";
+import { ScriptProps } from "./types";
 
 // Life-cycle methods relations mapping
 export const cycle: { [name: string]: any } = {
@@ -26,46 +27,43 @@ function getFormatPropType(type: string) {
   return type === "boolean" ? "bool" : type;
 }
 
-export function genPropTypes(props: { [name: string]: any }, name: string) {
+export function genPropTypes(props: Map<string, ScriptProps>, name: string) {
   const properties: t.ObjectProperty[] = [];
   const componentName = formatComponentName(name);
 
-  for (const name in props) {
-    if (props.hasOwnProperty(name)) {
-      const obj = props[name];
-      let val;
+  for (let [name, obj] of props) {
+    let val: t.Expression;
 
-      if (obj.type === "typesOfArray") {
-        // Support following syntax:
-        // static propType = {text: PropTypes.oneOfType([PropTypes.string, PropTypes.number])}
-        const elements = (obj.typeValue as string[]).map((type) =>
-          t.memberExpression(
-            t.identifier("PropTypes"),
-            t.identifier(getFormatPropType(type))
-          )
-        );
-
-        val = t.callExpression(
-          t.memberExpression(
-            t.identifier("PropTypes"),
-            t.identifier("oneOfType")
-          ),
-          [t.arrayExpression(elements)]
-        );
-      } else {
-        // Support following syntax:
-        // static propType = {title: PropTypes.string, list: PropTypes.array.isRequired}
-        val = t.memberExpression(
+    if (obj.type === "typesOfArray") {
+      // Support following syntax:
+      // static propType = {text: PropTypes.oneOfType([PropTypes.string, PropTypes.number])}
+      const elements = (obj.typeValue as string[]).map((type) =>
+        t.memberExpression(
           t.identifier("PropTypes"),
-          t.identifier(getFormatPropType(obj.typeValue))
-        );
-        if (obj.required) {
-          val = t.memberExpression(val, t.identifier("isRequired"));
-        }
-      }
+          t.identifier(getFormatPropType(type))
+        )
+      );
 
-      properties.push(t.objectProperty(t.identifier(name), val));
+      val = t.callExpression(
+        t.memberExpression(
+          t.identifier("PropTypes"),
+          t.identifier("oneOfType")
+        ),
+        [t.arrayExpression(elements)]
+      );
+    } else {
+      // Support following syntax:
+      // static propType = {title: PropTypes.string, list: PropTypes.array.isRequired}
+      val = t.memberExpression(
+        t.identifier("PropTypes"),
+        t.identifier(getFormatPropType(obj.typeValue as string))
+      );
+      if (obj.required) {
+        val = t.memberExpression(val, t.identifier("isRequired"));
+      }
     }
+
+    properties.push(t.objectProperty(t.identifier(name), val));
   }
 
   // babel not support generate static class property now.
@@ -82,38 +80,38 @@ export function genPropTypes(props: { [name: string]: any }, name: string) {
   );
 }
 
-export function genDefaultProps(props: { [name: string]: any }, name: string) {
+export function genDefaultProps(props: Map<string, ScriptProps>, name: string) {
   const properties: t.ObjectProperty[] = [];
   const componentName = formatComponentName(name);
-
-  for (const name in props) {
-    if (props.hasOwnProperty(name)) {
-      const obj = props[name];
-      let val;
-      if (obj.defaultValue !== undefined) {
-        // igonre "type === 'typesOfArray'" condition,
-        // because the defaultValue is undefined when type is typesOfArray
-        switch (obj.type) {
-          case "string":
-            val = t.stringLiteral(obj.defaultValue);
-            break;
-          case "boolean":
-            val = t.booleanLiteral(obj.defaultValue);
-            break;
-          case "number":
-            val = t.numericLiteral(Number(obj.defaultValue));
-            break;
-          case "array":
-            val = t.arrayExpression(obj.defaultValue.elements);
-            break;
-          case "object":
-            val = t.objectExpression(obj.defaultValue.properties);
-            break;
-          default:
-            break;
-        }
-        properties.push(t.objectProperty(t.identifier(name), val));
+  for (let [name, obj] of props) {
+    let val;
+    if (obj.defaultValue !== undefined) {
+      // igonre "type === 'typesOfArray'" condition,
+      // because the defaultValue is undefined when type is typesOfArray
+      switch (obj.type) {
+        case "string":
+          val = t.stringLiteral(obj.defaultValue);
+          break;
+        case "boolean":
+          val = t.booleanLiteral(obj.defaultValue);
+          break;
+        case "number":
+          val = t.numericLiteral(Number(obj.defaultValue));
+          break;
+        case "array":
+          val = t.arrayExpression(obj.defaultValue.elements);
+          break;
+        case "object":
+          val = t.objectExpression(obj.defaultValue.properties);
+          break;
+        case "element":
+          val = t.nullLiteral();
+          break;
+        default:
+          break;
       }
+
+      properties.push(t.objectProperty(t.identifier(name), val));
     }
   }
 

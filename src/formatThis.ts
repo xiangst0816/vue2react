@@ -14,7 +14,7 @@ import { Script } from "./utils/types";
 function getThisIdentify(script: Script, key: string) {
   if (script.data[key]) {
     return t.identifier("state");
-  } else if (script.props[key]) {
+  } else if (script.props.get(key)) {
     return t.identifier("props");
   }
   return null;

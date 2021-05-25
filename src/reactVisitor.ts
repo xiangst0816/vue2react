@@ -82,12 +82,15 @@ export default class ReactVisitor {
 
     // add 'import ./index.scss'
     if (hasStyle) {
-      const importCSS = t.importDeclaration([], t.stringLiteral("./index.scss"));
+      const importCSS = t.importDeclaration(
+        [],
+        t.stringLiteral("./index.scss")
+      );
       path.node.body.unshift(importCSS);
     }
 
     // add 'import PropTypes from "PropType";'
-    if (Object.keys(this.app.script.props).length) {
+    if (this.app.script.props.size) {
       const importPropTypes = t.importDeclaration(
         [t.importDefaultSpecifier(t.identifier("PropTypes"))],
         t.stringLiteral("prop-types")
@@ -120,12 +123,12 @@ export default class ReactVisitor {
   }
 
   genStaticProps(path: NodePath<t.Program>) {
-    path.node.body.push(
-      genPropTypes(this.app.script.props, this.app.script.name)
-    );
-    path.node.body.push(
-      genDefaultProps(this.app.script.props, this.app.script.name)
-    );
+    const props = new Map([
+      ...this.app.script.props,
+      ...this.app.template.slotsCollector,
+    ]);
+    path.node.body.push(genPropTypes(props, this.app.script.name));
+    path.node.body.push(genDefaultProps(props, this.app.script.name));
   }
 
   genClassMethods(path: NodePath<t.ClassBody>) {
@@ -322,7 +325,7 @@ export default class ReactVisitor {
         dataProperties.push(
           t.objectProperty(t.identifier(attr), t.identifier(attr), false, true)
         );
-      } else if (this.app.script.props[attr]) {
+      } else if (this.app.script.props.get(attr)) {
         propProperties.push(
           t.objectProperty(t.identifier(attr), t.identifier(attr), false, true)
         );

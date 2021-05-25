@@ -56,8 +56,8 @@ export function transformCode(sourceCode: string) {
     // iterator 搜集数据
     const script = scriptIterator(preScript);
     const template = templateIterator(preTemplate);
-    const lepus = lepusIterator(preConfig, root);
     const config = configIterator(preConfig);
+    const lepus = lepusIterator(preConfig, root);
 
     const app = {
       script,

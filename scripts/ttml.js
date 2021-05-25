@@ -11,11 +11,11 @@ const {
   formatCode,
 } = require("../dist/index");
 
-const name = "avatar";
+const name = "button";
 const distDir = path.resolve(__dirname, name);
 
-const baseDir = path.resolve(__dirname, `../ttml/${name}`);
-// const baseDir = `/Users/xiangst/bytedance/lynx-mono/packages/lynx-ui/components/${name}`;
+// const baseDir = path.resolve(__dirname, `../ttml/${name}`);
+const baseDir = `/Users/xiangst/bytedance/lynx-mono/packages/lynx-ui/components/${name}`;
 
 const scriptPath = path.resolve(baseDir, `${name}.js`);
 const stylePath = path.resolve(baseDir, `${name}.ttss`);
@@ -33,7 +33,7 @@ function transformCode(templateCode, scriptCode, styleCode, configCode) {
   // console.log(script);
 
   // template
-  const template = templateIterator(templateCode);
+  const template = templateIterator(templateCode,script);
   // console.log(template);
   const lepus = lepusIterator(configCode, baseDir);
   const config = configIterator(configCode);
