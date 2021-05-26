@@ -299,7 +299,6 @@ export default class ReactVisitor {
     }
 
     // [Component] 中需要在 constructor 中注入 _lynxComponentCreated、_lynxComponentAttached 执行语句
-    if (this.app.config["component"]) {
       const constructorStatementBody = (path.node.body.find(
         (node) => t.isClassMethod(node) && node.kind === "constructor"
       ) as t.ClassMethod).body.body;
@@ -307,6 +306,7 @@ export default class ReactVisitor {
       const lynxComponentCycleInjectToConstructor = [
         "_lynxComponentCreated",
         "_lynxComponentAttached",
+        "_lynxCardOnLoad",
       ];
       path.node.body.forEach((node) => {
         if (t.isClassMethod(node) && t.isIdentifier(node.key)) {
@@ -325,7 +325,6 @@ export default class ReactVisitor {
           }
         }
       });
-    }
 
     // template -> name 需要在拼好 renderXX 函数（已提前做好 ClassMethod）
     const templateCollector = this.app.template.templateCollector;

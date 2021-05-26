@@ -58,13 +58,9 @@ export default class ScriptVisitor {
     const ttmlCycleName = (path.node.key as t.Identifier).name;
     const reactCycleName = LynxCardCycle[ttmlCycleName];
     if (reactCycleName) {
-      const params: t.Identifier[] = [];
+      const params: t.LVal[] = path.node.params;
       // 函数内 this 需要处理下（this.data/this.properties）
       const blockStatement = formatThisExpression(path, this.script);
-
-      if (reactCycleName === "onReady") {
-        params.push(t.identifier("error"));
-      }
 
       // TODO：onDataChanged；看文档, 这里只做数据搜集；
 
@@ -242,11 +238,26 @@ export default class ScriptVisitor {
             // {type: String, value: "title", observer:()=>{}}
             let newValNode: t.Identifier | undefined;
             let oldValNode: t.Identifier | undefined;
-            if (path.node.params[0] && t.isIdentifier(path.node.params[0])) {
-              newValNode = path.node.params[0];
+            if (path.node.params[0]) {
+              if (t.isIdentifier(path.node.params[0])) {
+                newValNode = path.node.params[0];
+              } else if (
+                t.isAssignmentPattern(path.node.params[0]) &&
+                t.isIdentifier(path.node.params[0].left)
+              ) {
+                newValNode = path.node.params[0].left;
+              }
             }
-            if (path.node.params[1] && t.isIdentifier(path.node.params[1])) {
-              oldValNode = path.node.params[1];
+
+            if (path.node.params[1]) {
+              if (t.isIdentifier(path.node.params[1])) {
+                oldValNode = path.node.params[1];
+              } else if (
+                t.isAssignmentPattern(path.node.params[1]) &&
+                t.isIdentifier(path.node.params[1].left)
+              ) {
+                oldValNode = path.node.params[1].left;
+              }
             }
 
             // 函数内 this 需要处理下（this.data/this.properties）

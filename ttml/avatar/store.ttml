@@ -112,3 +112,11 @@
 >
     <text>hello world</text>
 </view>
+
+
+<view catchtap="catchtapHandler">
+    <text>123</text>
+</view>
+<view data-id="123" catchtap="dataHandler">
+    <text>123</text>
+</view>

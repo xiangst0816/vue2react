@@ -23,7 +23,7 @@ function collectStyleAttrs(
           // <view style="{{color}}:red;flex-direction:{{column}};"/> -> <div style={{[color+'']:'red',flexDirection:column}}/>
           // <view style="{{color}}_1:red;flex-direction:{{column}}_2;"/> -> <div style={{[color+'_1']:'red',flexDirection:column+'_2'}}/>
           let property = getCollectedProperty(
-            styleDeclaration.property.map((node: anyObject) => {
+            (styleDeclaration.property || []).map((node: anyObject) => {
               if (node.type === NodeType.Mustache) {
                 // Mustache
                 const { identifiers, expression } = transformTextToExpression(
@@ -46,7 +46,7 @@ function collectStyleAttrs(
           );
 
           let value = getCollectedProperty(
-            styleDeclaration.value.map((node: anyObject) => {
+            (styleDeclaration.value || []).map((node: anyObject) => {
               if (node.type === NodeType.Mustache) {
                 // Mustache
                 const { identifiers, expression } = transformTextToExpression(
@@ -171,7 +171,7 @@ function collectDataAttrs(
   const name = attr.name;
   const propertyName = name.replace("data-", "");
   const dataVal = getCollectedProperty(
-    attr.children.map((node: anyObject) => {
+    (attr.children || []).map((node: anyObject) => {
       if (node.type === NodeType.Mustache) {
         // Mustache
         const { identifiers, expression } = transformTextToExpression(
@@ -211,7 +211,7 @@ function collectCommonAttrs(
   // <text clip-radius="{{true}}">clip-radius</text> -> <Text clipRadius={true}>clip-radius</Text>
   let attrKey = _.camelCase(attr.name);
   let attrValue = getCollectedProperty(
-    attr.children.map((node: anyObject) => {
+    (attr.children || []).map((node: anyObject) => {
       if (node.type === NodeType.Mustache) {
         // Mustache
         const { identifiers, expression } = transformTextToExpression(
@@ -245,9 +245,12 @@ function collectCommonAttrs(
   if (t.isStringLiteral(attrValue)) {
     // id="xxx" -> id="xxx"
     jSXAttributeValue = attrValue;
-  } else {
+  } else if (attrValue) {
     // id="{{xxx}}_123" -> id={xxx+'_123'}
     jSXAttributeValue = t.jSXExpressionContainer(attrValue);
+  } else {
+    // x-scroll-> xScroll={true}
+    jSXAttributeValue = t.jSXExpressionContainer(t.booleanLiteral(true));
   }
 
   commonAttrs.push(t.jSXAttribute(t.jSXIdentifier(attrKey), jSXAttributeValue));

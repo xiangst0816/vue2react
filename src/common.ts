@@ -33,7 +33,7 @@ export const LynxComponentCycle: Record<string, string | undefined> = {
 
 export const LynxCardCycle: Record<string, string | undefined> = {
   // TODO: Card 部分 需要测试
-  onLoad: "constructor",
+  onLoad: "_lynxCardOnLoad", // 需要在 constructor 写明 this._lynxComponentCreated()
   onShow: "_lynxCardOnShow", // TODO 需要在 componentDidMount -> this.GlobalEventEmitter.addListener 中监听 onShow
   onHide: "_lynxCardOnHide", // TODO 需要在 componentDidMount -> this.GlobalEventEmitter.addListener 中监听 onHide
   onReady: "componentDidMount",

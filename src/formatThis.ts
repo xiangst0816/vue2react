@@ -1,6 +1,6 @@
 import { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
-
+import _ from "lodash";
 import { Script } from "./utils/types";
 
 /*
@@ -22,7 +22,7 @@ function getThisIdentify(script: Script, key: string) {
 
 const replaceThisExpression = {
   ThisExpression(
-    this: {script:Script},
+    this: { script: Script },
     thisExpressionNodePath: NodePath<t.ThisExpression>
   ) {
     // here is -> this.xxx
@@ -72,6 +72,50 @@ const replaceThisExpression = {
           // const { speed } = this.properties -> const { speed } = this.props;
           // const { name } = this.data -> const { name } = this.state;
           thisExpressionNodePath.parent.property.name = replacedName;
+        } else if (
+          thisPropertyName === "triggerEvent" &&
+          t.isCallExpression(thisExpressionNodePath.parentPath.parent)
+        ) {
+          // Support following syntax:
+          // this.triggerEvent("change", {}) -> this.props.onChange && this.props.onChange({})
+          // TODO: DOC 不支持字符串之外的写法
+
+          const callExpression = thisExpressionNodePath.parentPath.parent;
+          const eventName = t.isStringLiteral(callExpression.arguments[0])
+            ? _.camelCase(`on-${callExpression.arguments[0].value}`)
+            : "";
+          const eventData = callExpression.arguments[1];
+
+          if (
+            t.isExpressionStatement(
+              thisExpressionNodePath.parentPath.parentPath.parent
+            )
+          ) {
+            // props 属性记录
+            this.script.props.set(eventName, {
+              type: "func",
+              typeValue: "func",
+              defaultValue: null,
+              required: false,
+              validator: false,
+              observer: false,
+            });
+
+            thisExpressionNodePath.parentPath.parentPath.parent.expression = t.logicalExpression(
+              "&&",
+              t.memberExpression(
+                t.memberExpression(t.thisExpression(), t.identifier("props")),
+                t.identifier(eventName)
+              ),
+              t.callExpression(
+                t.memberExpression(
+                  t.memberExpression(t.thisExpression(), t.identifier("props")),
+                  t.identifier(eventName)
+                ),
+                [eventData]
+              )
+            );
+          }
         }
       }
     }
