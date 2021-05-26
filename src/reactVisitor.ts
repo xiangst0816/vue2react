@@ -11,6 +11,7 @@ import {
   formatComponentName,
   getClassMethodInClassBody,
 } from "./utils/tools";
+import { parse } from "@babel/parser";
 
 export default class ReactVisitor {
   app: App;
@@ -604,56 +605,31 @@ export default class ReactVisitor {
   // }
   _genOnDateChangedInjector(path: NodePath<t.ClassBody>) {
     if (Boolean(this.app.config["component"])) return;
-    if (!getClassMethodInClassBody("_lynxCardOnDataChanged", path)) {
-      return;
-    }
+    if (!getClassMethodInClassBody("_lynxCardOnDataChanged", path)) return;
 
-    const componentDidUpdateNode = getOrCreatedClassMethodInClassBody(
-      "componentDidUpdate",
-      path,
-      ["prevProps", "prevState"]
-    );
+    const script = `class Script {
+      _stateDiff(newState, prevState) {
+        newState = newState || {};
+        prevState = prevState || {};
+        const t = { ...prevState, ...newState };
+        return Object.keys(t).reduce((diff, curr) => {
+          if (prevState[curr] !== t[curr]) diff[curr] = t[curr];
+          return diff;
+        }, {});
+      }
+      componentDidUpdate(prevProps, prevState) {
+        const diff = this._stateDiff(this.state, prevState);
+        if (Object.keys(diff).length>0) {
+            this._lynxCardOnDataChanged(diff)
+        }
+      }
+    }`;
 
-    const statements = [
-      t.variableDeclaration("const", [
-        t.variableDeclarator(
-          t.identifier("diff"),
-          t.callExpression(
-            t.memberExpression(t.thisExpression(), t.identifier("_stateDiff")),
-            [
-              t.memberExpression(t.thisExpression(), t.identifier("state")),
-              t.identifier("prevState"),
-            ]
-          )
-        ),
-      ]),
-      t.ifStatement(
-        t.binaryExpression(
-          ">",
-          t.memberExpression(
-            t.callExpression(
-              t.memberExpression(t.identifier("Object"), t.identifier("keys")),
-              [t.identifier("diff")]
-            ),
-            t.identifier("length")
-          ),
-          t.numericLiteral(0)
-        ),
-        t.blockStatement([
-          t.expressionStatement(
-            t.callExpression(
-              t.memberExpression(
-                t.thisExpression(),
-                t.identifier("_lynxCardOnDataChanged")
-              ),
-              [t.identifier("diff")]
-            )
-          ),
-        ])
-      ),
-    ];
+    const vast = parse(script, { sourceType: "module" });
+    const statements = (vast.program.body[0] as t.ClassDeclaration).body
+      .body as t.ClassMethod[];
     statements.reverse().forEach((statement) => {
-      componentDidUpdateNode.body.body.unshift(statement);
+      path.node.body.push(statement);
     });
   }
 }

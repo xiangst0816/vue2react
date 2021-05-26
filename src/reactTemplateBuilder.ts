@@ -11,15 +11,6 @@ export default function reactTemplateBuilder(app: App) {
         super(props);
         this.state=STATE;
       }
-      _stateDiff(newState, prevState) {
-        newState = newState || {};
-        prevState = prevState || {};
-        const t = { ...prevState, ...newState };
-        return Object.keys(t).reduce((diff, curr) => {
-          if (prevState[curr] !== t[curr]) diff[curr] = t[curr];
-          return diff;
-        }, {});
-      }
       _styleStringToObject (styleInput) {
         return (styleInput||'').split(';').filter(i=>i&&i.trim()).reduce(function (ruleMap, ruleString) {
           const rulePair = ruleString.split(':');

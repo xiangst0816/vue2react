@@ -1,5 +1,5 @@
 Card({
   data: {},
-  // onDataChanged: function (a) {
-  // }
+  onDataChanged: function (a) {
+  }
 });
