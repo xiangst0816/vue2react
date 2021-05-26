@@ -1,4 +1,5 @@
 Card({
-  // onHide() {},
-  onShow() {},
+  data: {},
+  // onDataChanged: function (a) {
+  // }
 });

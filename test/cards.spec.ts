@@ -10,3 +10,6 @@ test("life-cycle", ({ snapshot }) => {
 test("show-hide", ({ snapshot }) => {
   snapshot(transform("show-hide", path.resolve(__dirname, `cards/show-hide`)));
 });
+test("data-changed", ({ snapshot }) => {
+  snapshot(transform("data-changed", path.resolve(__dirname, `cards/data-changed`)));
+});

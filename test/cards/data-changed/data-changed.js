@@ -1,0 +1,4 @@
+Card({
+    data: {},
+    onDataChanged: function () {}
+});

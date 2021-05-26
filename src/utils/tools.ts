@@ -247,7 +247,7 @@ export function getGlobalEventEmitterStatement(
           t.memberExpression(t.thisExpression(), t.identifier("getJSModule")),
           [t.stringLiteral("GlobalEventEmitter")]
         ),
-          t.identifier(eventType || 'addListener')
+        t.identifier(eventType || "addListener")
       ),
       [
         t.stringLiteral(eventName),
@@ -272,7 +272,8 @@ export function getClassMethodInClassBody(
 
 export function getOrCreatedClassMethodInClassBody(
   name: string,
-  path: NodePath<t.ClassBody>
+  path: NodePath<t.ClassBody>,
+  params: string[]
 ) {
   let node = getClassMethodInClassBody(name, path);
 
@@ -281,7 +282,7 @@ export function getOrCreatedClassMethodInClassBody(
     node = t.classMethod(
       "method",
       t.identifier(name),
-      [],
+      params.map((i) => t.identifier(i)),
       t.blockStatement([])
     );
     path.node.body.push(node);

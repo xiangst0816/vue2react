@@ -165,7 +165,7 @@ export default class ReactVisitor {
       }
     }
 
-    // 注入对应触发函数 this._propertyObserver();
+    // 注入 observer 触发函数 this._propertyObserver();
     this._genObserverInjector(path);
 
     // onShow、onHide 注入
@@ -176,6 +176,9 @@ export default class ReactVisitor {
 
     // 注入 template 的 render 方法
     this._genTemplateInjector(path);
+
+    // onDataChanged 事件的对应处理
+    this._genOnDateChangedInjector(path);
   }
 
   genRenderMethods(path: NodePath<t.ClassBody>) {
@@ -393,7 +396,8 @@ export default class ReactVisitor {
       // 1. create -> componentDidMount(){}
       const componentDidMountNode = getOrCreatedClassMethodInClassBody(
         "componentDidMount",
-        path
+        path,
+        []
       );
 
       // 2. add -> componentDidMount(){this._propertyObserver(this.props, Component.defaultProps);}
@@ -419,7 +423,7 @@ export default class ReactVisitor {
       const componentDidUpdateNode = t.classMethod(
         "method",
         t.identifier("componentDidUpdate"),
-        [t.identifier("prevProps")],
+        [t.identifier("prevProps"), t.identifier("prevState")],
         t.blockStatement([
           t.expressionStatement(
             t.callExpression(
@@ -453,11 +457,13 @@ export default class ReactVisitor {
           // 1. create -> componentDidMount / componentWillUnmount
           const componentDidMountNode = getOrCreatedClassMethodInClassBody(
             "componentDidMount",
-            path
+            path,
+            []
           );
           const componentWillUnmountNode = getOrCreatedClassMethodInClassBody(
             "componentWillUnmount",
-            path
+            path,
+            []
           );
           // 2. add
           componentDidMountNode.body.body.unshift(
@@ -590,5 +596,64 @@ export default class ReactVisitor {
     }
 
     path.node.body.push(eventHandlerClassProperty);
+  }
+
+  // const diff = this._stateDiff(this.state, prevState);
+  // if (Object.keys(diff).length>0) {
+  //   this._lynxCardOnDataChanged(diff)
+  // }
+  _genOnDateChangedInjector(path: NodePath<t.ClassBody>) {
+    if (Boolean(this.app.config["component"])) return;
+    if (!getClassMethodInClassBody("_lynxCardOnDataChanged", path)) {
+      return;
+    }
+
+    const componentDidUpdateNode = getOrCreatedClassMethodInClassBody(
+      "componentDidUpdate",
+      path,
+      ["prevProps", "prevState"]
+    );
+
+    const statements = [
+      t.variableDeclaration("const", [
+        t.variableDeclarator(
+          t.identifier("diff"),
+          t.callExpression(
+            t.memberExpression(t.thisExpression(), t.identifier("_stateDiff")),
+            [
+              t.memberExpression(t.thisExpression(), t.identifier("state")),
+              t.identifier("prevState"),
+            ]
+          )
+        ),
+      ]),
+      t.ifStatement(
+        t.binaryExpression(
+          ">",
+          t.memberExpression(
+            t.callExpression(
+              t.memberExpression(t.identifier("Object"), t.identifier("keys")),
+              [t.identifier("diff")]
+            ),
+            t.identifier("length")
+          ),
+          t.numericLiteral(0)
+        ),
+        t.blockStatement([
+          t.expressionStatement(
+            t.callExpression(
+              t.memberExpression(
+                t.thisExpression(),
+                t.identifier("_lynxCardOnDataChanged")
+              ),
+              [t.identifier("diff")]
+            )
+          ),
+        ])
+      ),
+    ];
+    statements.reverse().forEach((statement) => {
+      componentDidUpdateNode.body.body.unshift(statement);
+    });
   }
 }
