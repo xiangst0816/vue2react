@@ -216,6 +216,8 @@ export default class ScriptVisitor {
                   t.isObjectExpression(node.value)
                 ) {
                   this.prop.defaultValue = node.value;
+                } else if (t.isNullLiteral(node.value)) {
+                  this.prop.defaultValue = null;
                 }
                 break;
               default:

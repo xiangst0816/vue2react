@@ -1,5 +1,11 @@
 Component({
   properties: {
+    propsNull: {
+      value: null,
+    },
+    propsUndefined: {
+      value: undefined,
+    },
     propsStr: {
       type: String,
       value: "",
@@ -10,6 +16,10 @@ Component({
       type: Number,
       value: 0,
     },
+    propsNum2: {
+      type: Number,
+      value: '',
+    },
     propsBool: {
       type: Boolean,
       value: false,
@@ -18,9 +28,15 @@ Component({
       type: Array,
       value: [],
     },
+    propsArr1: Array,
     propsObj: {
       type: Object,
       value: {},
+    },
+    propsObj1: Object,
+    propsObj2: {
+      type: Object,
+      value: null,
     },
   },
   data: {
@@ -97,12 +113,12 @@ Component({
   objectProperty2: function () {},
   fakeSetData2: function () {
     this.setData(
-        {
-          dataString: "123",
-        },
-        () => {
-          const dataString = this.data.dataString;
-        }
+      {
+        dataString: "123",
+      },
+      () => {
+        const dataString = this.data.dataString;
+      }
     );
   },
 });

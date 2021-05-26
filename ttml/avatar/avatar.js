@@ -1,7 +1,6 @@
 Component({
   properties: {
-    aa: {
-      value: undefined,
-    },
+    arr: Array,
+    obj: Object,
   },
 });

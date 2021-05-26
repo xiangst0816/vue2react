@@ -4,25 +4,6 @@ import traverse from "@babel/traverse";
 import _ from "lodash";
 import { ScriptProps } from "./types";
 
-// Life-cycle methods relations mapping
-// export const cycle: { [name: string]: any } = {
-//   // Component 部分
-//   created: "componentCreated", // *  需要在 constructor 写明 this.componentCreated()
-//   attached: "componentAttached", // *  需要在 constructor 写明 this.componentAttached()，created 之后调用
-//   ready: "componentDidMount",
-//   detached: "componentWillUnmount",
-//   error: "componentDidCatch",
-//   moved: "componentMoved", // 没有对等实现
-//   // Card 部分
-//   // : 处理 Card 的映射关系
-//
-//   // created: 'componentWillMount',
-//   // mounted: 'componentDidMount',
-//   // updated: 'componentDidUpdate',
-//   // beforeDestroy: 'componentWillUnmount',
-//   // errorCaptured: 'componentDidCatch'
-// };
-
 function getFormatPropType(type: string) {
   return type === "boolean" ? "bool" : type;
 }
@@ -85,37 +66,47 @@ export function genDefaultProps(props: Map<string, ScriptProps>, name: string) {
   const componentName = formatComponentName(name);
   for (let [name, obj] of props) {
     let val;
-    if (obj.defaultValue !== undefined) {
-      // igonre "type === 'typesOfArray'" condition,
-      // because the defaultValue is undefined when type is typesOfArray
-      switch (obj.type) {
-        case "string":
-          val = t.stringLiteral(obj.defaultValue);
-          break;
-        case "boolean":
-          val = t.booleanLiteral(obj.defaultValue);
-          break;
-        case "number":
-          val = t.numericLiteral(Number(obj.defaultValue));
-          break;
-        case "array":
-          val = t.arrayExpression(obj.defaultValue.elements);
-          break;
-        case "object":
-          val = t.objectExpression(obj.defaultValue.properties);
-          break;
-        case "element":
+    // igonre "type === 'typesOfArray'" condition,
+    // because the defaultValue is undefined when type is typesOfArray
+    switch (obj.type) {
+      case "string":
+        val = t.stringLiteral(obj.defaultValue || "");
+        break;
+      case "boolean":
+        val = t.booleanLiteral(Boolean(obj.defaultValue));
+        break;
+      case "number":
+        val = t.numericLiteral(Number(obj.defaultValue));
+        break;
+      case "array":
+        val = obj.defaultValue?.elements
+          ? t.arrayExpression(obj.defaultValue.elements)
+          : t.nullLiteral();
+        break;
+      case "object":
+        val = obj.defaultValue?.properties
+          ? t.objectExpression(obj.defaultValue?.properties)
+          : t.nullLiteral();
+        break;
+      case "element":
+        val = t.nullLiteral();
+        break;
+      case "func":
+        val = t.nullLiteral();
+        break;
+      case "any":
+        if (obj.defaultValue === null) {
           val = t.nullLiteral();
-          break;
-        case "func":
-          val = t.nullLiteral();
-          break;
-        default:
-          break;
-      }
-
-      properties.push(t.objectProperty(t.identifier(name), val));
+        } else {
+          val = t.identifier("undefined");
+        }
+        break;
+      default:
+        val = t.nullLiteral();
+        break;
     }
+
+    properties.push(t.objectProperty(t.identifier(name), val));
   }
 
   // babel not support generate static class property now.
