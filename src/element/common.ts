@@ -32,14 +32,13 @@ function collectStyleAttrs(
                 identifiers.forEach((i) => attrsCollector.add(i));
                 return expression;
               } else if (node.type === NodeType.Text) {
-                // Text
-                return t.stringLiteral(node.text);
+                // Text justify-content -> justifyContent
+                return t.stringLiteral(_.camelCase(node.text));
               } else if (node.type === NodeType.WhiteSpace) {
                 // WhiteSpace
                 return t.stringLiteral(" ");
               }
 
-              debugger;
               return "";
             }),
             true

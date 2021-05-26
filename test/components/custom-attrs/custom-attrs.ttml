@@ -1,0 +1,17 @@
+<view attrParams1="1" attrParams2="{{a}}" attrParams3="{{c}}"></view>
+<view attr-params1="1" attr-params2="{{a}}" attr-params3="{{c}}"></view>
+<scroll-view
+        scroll-y
+        id="scrollee"
+        style="width: 100%; height: 200px; background-color: red;"
+        bindscroll="s"
+>
+    <view style="width: 50%; height: 400px; background: linear-gradient(to top, black, white);"/>
+</scroll-view>
+<swiper current="{{ 0 }}" indicator-dots="{{ false }}" autoplay="true" circular="true" class="swiper-wrap">
+    <swiper-item item-id="{{index}}" tt:for="{{[1,2,3]}}" class="swiper-item">
+        <view class="rectwrap">
+            <text class="rect {{item}}">{{ index + 1 }}</text>
+        </view>
+    </swiper-item>
+</swiper>

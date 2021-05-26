@@ -18,7 +18,7 @@ Component({
     },
     propsNum2: {
       type: Number,
-      value: '',
+      value: "",
     },
     propsBool: {
       type: Boolean,
@@ -50,6 +50,7 @@ Component({
   methods: {
     innerMethod() {
       const dataString = this.data.dataString;
+      const dataString2 = this.data["dataString"];
       const dataArray = this.data.dataArray;
       const dataObj = this.data.dataObj;
       const dataNumber = this.data.dataNumber;
@@ -58,6 +59,8 @@ Component({
       const propsStr = this.properties.propsStr;
       const propsStr1 = this.properties.propsStr1;
       const propsStr2 = this.properties.propsStr2;
+      const propsStr3 = this.properties["propsStr"];
+      const propsStr4 = this.properties["propsS" + "tr"];
       const propsNum = this.properties.propsNum;
       const propsBool = this.properties.propsBool;
       const propsArr = this.properties.propsArr;
@@ -95,6 +98,8 @@ Component({
     const propsStr = this.properties.propsStr;
     const propsStr1 = this.properties.propsStr1;
     const propsStr2 = this.properties.propsStr2;
+    const propsStr3 = this.properties["propsStr"];
+    const propsStr4 = this.properties["propsS" + "tr"];
     const propsNum = this.properties.propsNum;
     const propsBool = this.properties.propsBool;
     const propsArr = this.properties.propsArr;
@@ -108,6 +113,8 @@ Component({
     const propsBool = this.data.propsBool;
     const propsArr = this.data.propsArr;
     const propsObj = this.data.propsObj;
+    const propsObj1 = this.data["propsObj"]; // 无法修正
+    const propsObj3 = this.data["props" + "Obj"]; // 无法修正
   },
   arrowFunction2: () => {},
   objectProperty2: function () {},

@@ -1,0 +1,6 @@
+<view>
+    <text>{{propsNum2}}</text>
+    <text>{{propsArr}}</text>
+    <text>{{dataString}}</text>
+    <text>{{dataUndefined}}</text>
+</view>

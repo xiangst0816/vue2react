@@ -1,0 +1,10 @@
+<view style="display: flex;justify-content: center;align-content: center"></view>
+<view style="background: {{color}};"></view>
+
+<text style="color:red;flex-direction: column;" class="class-name1 class-name2">
+    字符串属性
+</text>
+<text style="color:red;transform: translateX(-{{25 * index}}%) translateZ({{1000-index}}px);flex-direction: {{direction}};{{backgroundName}}: white;{{flexName}}-direction: column;{{customStyle1}}{{customStyle1 + customStyle2}}"
+      class="class-name1 class-name2 {{cusClassName}} {{name}}_with_name">
+    属性包涵 Mustache
+</text>

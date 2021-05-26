@@ -2,6 +2,7 @@ import { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 import _ from "lodash";
 import { Script } from "./utils/types";
+import generate from "@babel/generator";
 
 /*
   Support following syntax:
@@ -86,7 +87,10 @@ const replaceThisExpression = {
             : "";
           const eventData = callExpression.arguments[1];
 
-          if (
+          if (!eventName) {
+            const res = generate(callExpression).code;
+            console.log(`NOTICE: 当前语法不支持转换，请检查: ${res}`);
+          } else if (
             t.isExpressionStatement(
               thisExpressionNodePath.parentPath.parentPath.parent
             )
@@ -112,7 +116,7 @@ const replaceThisExpression = {
                   t.memberExpression(t.thisExpression(), t.identifier("props")),
                   t.identifier(eventName)
                 ),
-                [eventData]
+                eventData ? [eventData] : []
               )
             );
           }

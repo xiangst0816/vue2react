@@ -231,6 +231,5 @@ export function transformTextToExpression(text: string) {
     // Have valid data
     expression = ast.program.body[0].expression;
   }
-  console.log("text->", text, "identifiers->", identifiers);
   return { identifiers, expression };
 }
