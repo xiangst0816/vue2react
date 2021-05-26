@@ -1,0 +1,3 @@
+<text style="{{cusClassName}};{{show ? ';opacity:1;' : ';opacity:0;'}}">{{ObjectProps.b}}</text>
+<text>{{ObjectProps.b}}</text>
+<text>{{ObjectProps.b.c}}</text>

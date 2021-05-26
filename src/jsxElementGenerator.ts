@@ -173,7 +173,7 @@ export default function jsxElementGenerator(
   if (!wrappedElement) {
     debugger;
     // 需要断点看看这里少处理了哪些 tag
-    throw new Error("check");
+    // throw new Error("check");
   }
 
   ast = (wrappedElement as any) as t.JSXElement;

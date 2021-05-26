@@ -44,6 +44,7 @@
     <text key="123_{{name}}">123_name</text>
     <text key="{{name}}">name</text>
     <text key="{{name}}">name</text>
+    <text clip-radius>clip-radius</text>
     <text clip-radius="true">clip-radius</text>
     <text clip-radius="{{true}}">clip-radius</text>
 
@@ -78,9 +79,6 @@
         <template is="{{item % 2 == 0 && 'even' || 'odd'}}" data="{{item,index}}"/>
     </block>
 </view>
-
-
-
 
 <view class="intro1"
       id="id"

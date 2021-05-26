@@ -1,0 +1,10 @@
+<text tt:if="{{hasError}}">IF</text>
+<text tt:else>ELSE!!!!</text>
+
+<text tt:if="{{hasError}}">IF</text>
+<text tt:elif="{{!hasError}}">ELIF!!!!</text>
+<text tt:elif="{{!hasError}}">ELIF!!!!</text>
+<text tt:elif="{{!hasError}}">ELIF!!!!</text>
+<text tt:elif="{{!hasError}}">ELIF!!!!</text>
+<text tt:elif="{{!hasError}}">ELIF!!!!</text>
+<text tt:else>ELSE!!!!</text>

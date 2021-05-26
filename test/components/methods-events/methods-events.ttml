@@ -1,4 +1,5 @@
 <view bindtap="bindtapHandler1"></view>
 <view data-x="x" data-id="id" data-arr="{{arr}}" data-obj="{{obj}}" data-num="{{12}}" bindtap="bindtapHandler2"></view>
 <view catchtap="catchtaoHandler1"></view>
-<view data-x="x" data-id="id" data-arr="{{arr}}" data-obj="{{obj}}" data-num="{{12}}" catchtap="catchtaoHandler2"></view>
+<view data-x="x" data-id="id" data-arr="{{arr}}" data-obj="{{obj}}" data-num="{{12}}"
+      catchtap="catchtaoHandler2"></view>

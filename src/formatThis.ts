@@ -89,7 +89,7 @@ const replaceThisExpression = {
 
           if (!eventName) {
             const res = generate(callExpression).code;
-            console.log(`NOTICE: 当前语法不支持转换，请检查: ${res}`);
+            throw new Error(`NOTICE: 当前语法不支持转换，请检查: ${res}`);
           } else if (
             t.isExpressionStatement(
               thisExpressionNodePath.parentPath.parentPath.parent

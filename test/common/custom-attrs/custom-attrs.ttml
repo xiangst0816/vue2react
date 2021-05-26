@@ -15,3 +15,11 @@
         </view>
     </swiper-item>
 </swiper>
+
+<text id="123">id_123</text>
+<text key="123">key_123</text>
+<text key="123_{{name}}">123_name</text>
+<text key="{{name}}">name</text>
+<text clip-radius>clip-radius</text>
+<text clip-radius="true">clip-radius</text>
+<text clip-radius="{{true}}">clip-radius</text>

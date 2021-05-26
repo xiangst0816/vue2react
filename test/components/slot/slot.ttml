@@ -1,0 +1,7 @@
+<view>
+    <slot name="left"></slot>
+    <slot/>
+    <slot name="right"></slot>
+    <slot tt:if="{{ data }}" name="open"></slot>
+    <slot tt:else name="close"></slot>
+</view>

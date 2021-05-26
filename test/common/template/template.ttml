@@ -5,7 +5,6 @@
 <template name="even">
     <text class="2">even {{item}} {{index}}</text>
 </template>
-
 <block tt:for="{{[1, 2, 3, 4, 5]}}">
     <template is="even" data="{{item,index}}"/>
     <template is="odd" data="{{...item}}"/>

@@ -1,13 +1,7 @@
 import test from "ava";
 import path from "path";
 
-import { readCode, transform } from "./utils";
-
-test("data-props", ({ snapshot }) => {
-  snapshot(
-    transform("data-props", path.resolve(__dirname, `components/data-props`))
-  );
-});
+import { transform } from "./utils";
 
 test("life-cycle", ({ snapshot }) => {
   snapshot(
@@ -24,20 +18,12 @@ test("methods-events", ({ snapshot }) => {
   );
 });
 
-test("custom-attrs", ({ snapshot }) => {
+test("observer", ({ snapshot }) => {
   snapshot(
-    transform(
-      "custom-attrs",
-      path.resolve(__dirname, `components/custom-attrs`)
-    )
+    transform("observer", path.resolve(__dirname, `components/observer`))
   );
 });
 
-test("class-style", ({ snapshot }) => {
-  snapshot(
-    transform(
-      "class-style",
-      path.resolve(__dirname, `components/class-style`)
-    )
-  );
+test("slot", ({ snapshot }) => {
+  snapshot(transform("slot", path.resolve(__dirname, `components/slot`)));
 });
