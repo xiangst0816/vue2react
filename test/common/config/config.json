@@ -1,0 +1,9 @@
+{
+  "component": true,
+  "name": "name",
+  "version": "1.1.1",
+  "flatten": false,
+  "autoExpose": false,
+  "usingTemplateAPI": {},
+  "usingComponents": {}
+}

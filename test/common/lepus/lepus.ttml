@@ -1,0 +1,22 @@
+<view tt:if="{{src}}"
+      clip-radius="true"
+      style="{{_styleFn.sizeStyle(size)}};{{avatarStyle}}"
+      class="{{name}} {{_styleFn.shapeClass(name,shape)}} {{_styleFn.sizeClass(name, size)}} {{_styleFn.statusErrorClass(name, hasError)}} {{_styleFn.statusClass(name, animate, loaded)}}">
+    <image tt:if="{{!hasError}}" binderror="onError" bindload="onLoad" src="{{src}}"
+           class="{{name}}-size-{{size}}"
+           style="{{_styleFn.sizeStyle(size)}};{{imageStyle}}"
+    />
+    <text tt:else class="{{name}}__alt-text" style="{{textStyle}}">{{alt}}</text>
+</view>
+<view tt:elif="{{alt}}"
+      clip-radius="true"
+      style="{{_styleFn.sizeStyle(size)}};{{avatarStyle}}"
+      class="{{name}} {{name}}-text {{_styleFn.shapeClass(name,shape)}} {{_styleFn.sizeClass(name, size)}} {{_styleFn.statusClass(name, true, true)}}">
+    <text class="{{name}}__alt-text {{_styleFn.textSizeClass(name, size)}}" style="{{textStyle}}">{{alt}}</text>
+</view>
+<view tt:else
+      clip-radius="true"
+      style="{{_styleFn.sizeStyle(size)}};{{avatarStyle}}"
+      class="{{name}} {{name}}-default {{_styleFn.shapeClass(name,shape)}} {{_styleFn.sizeClass(name, size)}} {{_styleFn.statusClass(name, true, true)}}">
+    <image src="{{defaultImage}}" class="{{name}}-default-image" style="{{imageStyle}}"/>
+</view>

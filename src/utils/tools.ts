@@ -1,6 +1,6 @@
 import * as t from "@babel/types";
 import * as parser from "@babel/parser";
-import traverse from "@babel/traverse";
+import traverse, { NodePath } from "@babel/traverse";
 import _ from "lodash";
 import { ScriptProps } from "./types";
 
@@ -232,4 +232,59 @@ export function transformTextToExpression(text: string) {
     expression = ast.program.body[0].expression;
   }
   return { identifiers, expression };
+}
+
+// this.getJSModule("GlobalEventEmitter").addListener(eventName, this[thisFuncName])
+export function getGlobalEventEmitterStatement(
+  eventName: string,
+  eventType: string,
+  thisFuncName: string
+) {
+  return t.expressionStatement(
+    t.callExpression(
+      t.memberExpression(
+        t.callExpression(
+          t.memberExpression(t.thisExpression(), t.identifier("getJSModule")),
+          [t.stringLiteral("GlobalEventEmitter")]
+        ),
+          t.identifier(eventType || 'addListener')
+      ),
+      [
+        t.stringLiteral(eventName),
+        t.memberExpression(t.thisExpression(), t.identifier(thisFuncName)),
+      ]
+    )
+  );
+}
+
+export function getClassMethodInClassBody(
+  name: string,
+  path: NodePath<t.ClassBody>
+) {
+  return (path.node.body.find((node) => {
+    return (
+      t.isClassMethod(node) &&
+      t.isIdentifier(node.key) &&
+      node.key.name === name
+    );
+  }) as any) as t.ClassMethod | undefined;
+}
+
+export function getOrCreatedClassMethodInClassBody(
+  name: string,
+  path: NodePath<t.ClassBody>
+) {
+  let node = getClassMethodInClassBody(name, path);
+
+  // 1. create -> componentDidMount(){}
+  if (!node) {
+    node = t.classMethod(
+      "method",
+      t.identifier(name),
+      [],
+      t.blockStatement([])
+    );
+    path.node.body.push(node);
+  }
+  return node;
 }

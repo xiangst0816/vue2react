@@ -3,10 +3,13 @@ import * as t from "@babel/types";
 import { App, Lepus } from "./utils/types";
 import { ReactComponents } from "./common";
 import {
+  getOrCreatedClassMethodInClassBody,
+  getGlobalEventEmitterStatement,
   genPropTypes,
   genDefaultProps,
   genObjectExpressionFromObject,
   formatComponentName,
+  getClassMethodInClassBody,
 } from "./utils/tools";
 
 export default class ReactVisitor {
@@ -74,6 +77,7 @@ export default class ReactVisitor {
                   t.identifier(formatComponentName(name))
                 ),
               ],
+              // TODO： 增加 自定义组件 mapping 规则
               t.stringLiteral(`${usingComponents[name]}.jsx`)
             )
           );
@@ -147,191 +151,31 @@ export default class ReactVisitor {
       ...this.app.script.methods,
       ...this.app.script.computed,
     };
-    const eventsCollector = this.app.template.eventsCollector;
 
+    // 事件、LifeCycle
     for (const name in methods) {
       if (methods[name]) {
-        if (eventsCollector.has(name)) {
-          // 绑定事件的函数
-          // eventHandler = (_dataset) => (e) => {
-          //   // maybe e.stopPropagation()
-          //   e.currentTarget.dataset = _dataset;
-          //   // .rest statement
-          // }
-          // eventHandler = (e) => {
-          //   // maybe e.stopPropagation()
-          //   // .rest statement
-          // }
-          const stopPropagation = Boolean(
-            eventsCollector.get(name)?.stopPropagation
-          );
-          const withData = Boolean(eventsCollector.get(name)?.withData);
-          const method = methods[name] as t.ClassMethod;
-          const eventKey = method.key as t.Identifier;
-          const eventParam =
-            (method.params[0] as t.Identifier) || t.identifier("_event");
-          const eventBody = method.body.body;
-
-          // e.stopPropagation()
-          // 如果本身是 catch，但是 事件 中可能没有 event 这个参数，需要自己补充上，强制执行 stopPropagation
-          const stopPropagationExpressionStatement =
-            eventParam && stopPropagation
-              ? t.expressionStatement(
-                  t.callExpression(
-                    t.memberExpression(
-                      eventParam,
-                      t.identifier("stopPropagation")
-                    ),
-                    []
-                  )
-                )
-              : t.emptyStatement();
-
-          // e.currentTarget.dataset = _dataset;
-          const datasetExpressionStatement =
-            eventParam && withData
-              ? t.expressionStatement(
-                  t.assignmentExpression(
-                    "=",
-                    t.memberExpression(
-                      t.memberExpression(
-                        eventParam,
-                        t.identifier("currentTarget")
-                      ),
-                      t.identifier("dataset")
-                    ),
-                    t.identifier("_dataset")
-                  )
-                )
-              : t.emptyStatement();
-
-          // (e) => { ... }
-          const handler = t.arrowFunctionExpression(
-            eventParam ? [eventParam] : [],
-            t.blockStatement([
-              stopPropagationExpressionStatement,
-              datasetExpressionStatement,
-              ...eventBody,
-            ])
-          );
-          let eventHandlerClassProperty: t.ClassProperty;
-          if (withData) {
-            // xx: (_dataset) => (e) => { ... }
-            eventHandlerClassProperty = t.classProperty(
-              eventKey,
-              t.arrowFunctionExpression([t.identifier("_dataset")], handler)
-            );
-          } else {
-            // xx: (e) => { ... }
-            eventHandlerClassProperty = t.classProperty(eventKey, handler);
-          }
-
-          path.node.body.push(eventHandlerClassProperty);
+        if (this.app.template.eventsCollector.has(name)) {
+          // 绑定事件
+          this._genEventHandlerInjector(path, name, methods);
         } else {
-          // 普通函数
-          // onLoad() {}
+          // 普通函数 onLoad() {}
           path.node.body.push(methods[name]);
         }
       }
     }
 
-    // [Component] observer 需要在 componentDidMount 和 componentDidUpdate
-    // 中注入对应触发函数 this._propertyObserver();
-    if (this.app.config["component"]) {
-      let componentDidMountNode = (path.node.body.find((node) => {
-        return (
-          t.isClassMethod(node) &&
-          t.isIdentifier(node.key) &&
-          node.key.name === "componentDidMount"
-        );
-      }) as any) as t.ClassMethod | undefined;
+    // 注入对应触发函数 this._propertyObserver();
+    this._genObserverInjector(path);
 
-      // 1. create -> componentDidMount(){}
-      if (!componentDidMountNode) {
-        componentDidMountNode = t.classMethod(
-          "method",
-          t.identifier("componentDidMount"),
-          [],
-          t.blockStatement([])
-        );
-        path.node.body.push(componentDidMountNode);
-      }
+    // onShow、onHide 注入
+    this._genOnShowOnHideInjector(path);
 
-      // 2. add -> componentDidMount(){this._propertyObserver(this.props, Component.defaultProps);}
-      componentDidMountNode.body.body.unshift(
-        t.expressionStatement(
-          t.callExpression(
-            t.memberExpression(
-              t.thisExpression(),
-              t.identifier("_propertyObserver")
-            ),
-            [
-              t.memberExpression(t.thisExpression(), t.identifier("props")),
-              t.memberExpression(
-                t.identifier(formatComponentName(this.app.script.name)),
-                t.identifier("defaultProps")
-              ),
-            ]
-          )
-        )
-      );
+    // created、attached、onLoad 执行语句注入
+    this._genConstructorInjector(path);
 
-      // 3. create+add -> componentDidUpdate(prevProps){this._propertyObserver(this.props, prevProps);}
-      const componentDidUpdateNode = t.classMethod(
-        "method",
-        t.identifier("componentDidUpdate"),
-        [t.identifier("prevProps")],
-        t.blockStatement([
-          t.expressionStatement(
-            t.callExpression(
-              t.memberExpression(
-                t.thisExpression(),
-                t.identifier("_propertyObserver")
-              ),
-              [
-                t.memberExpression(t.thisExpression(), t.identifier("props")),
-                t.identifier("prevProps"),
-              ]
-            )
-          ),
-        ])
-      );
-      path.node.body.push(componentDidUpdateNode);
-    }
-
-    // [Component] 中需要在 constructor 中注入 _lynxComponentCreated、_lynxComponentAttached 执行语句
-    const constructorStatementBody = (path.node.body.find(
-      (node) => t.isClassMethod(node) && node.kind === "constructor"
-    ) as t.ClassMethod).body.body;
-
-    const lynxComponentCycleInjectToConstructor = [
-      "_lynxComponentCreated",
-      "_lynxComponentAttached",
-      "_lynxCardOnLoad",
-    ];
-    path.node.body.forEach((node) => {
-      if (t.isClassMethod(node) && t.isIdentifier(node.key)) {
-        if (lynxComponentCycleInjectToConstructor.includes(node.key.name)) {
-          constructorStatementBody.push(
-            t.expressionStatement(
-              t.callExpression(
-                t.memberExpression(
-                  t.thisExpression(),
-                  t.identifier(node.key.name)
-                ),
-                []
-              )
-            )
-          );
-        }
-      }
-    });
-
-    // template -> name 需要在拼好 renderXX 函数（已提前做好 ClassMethod）
-    const templateCollector = this.app.template.templateCollector;
-    templateCollector.forEach((template) => {
-      path.node.body.push(template);
-    });
+    // 注入 template 的 render 方法
+    this._genTemplateInjector(path);
   }
 
   genRenderMethods(path: NodePath<t.ClassBody>) {
@@ -540,5 +384,211 @@ export default class ReactVisitor {
       // <View></View> -> <View />
       path.node.openingElement.selfClosing = true;
     }
+  }
+
+  // [Component] observer 需要在 componentDidMount 和 componentDidUpdate
+  // 中注入对应触发函数 this._propertyObserver();
+  _genObserverInjector(path: NodePath<t.ClassBody>) {
+    if (Boolean(this.app.config["component"])) {
+      // 1. create -> componentDidMount(){}
+      const componentDidMountNode = getOrCreatedClassMethodInClassBody(
+        "componentDidMount",
+        path
+      );
+
+      // 2. add -> componentDidMount(){this._propertyObserver(this.props, Component.defaultProps);}
+      componentDidMountNode.body.body.unshift(
+        t.expressionStatement(
+          t.callExpression(
+            t.memberExpression(
+              t.thisExpression(),
+              t.identifier("_propertyObserver")
+            ),
+            [
+              t.memberExpression(t.thisExpression(), t.identifier("props")),
+              t.memberExpression(
+                t.identifier(formatComponentName(this.app.script.name)),
+                t.identifier("defaultProps")
+              ),
+            ]
+          )
+        )
+      );
+
+      // 3. create+add -> componentDidUpdate(prevProps){this._propertyObserver(this.props, prevProps);}
+      const componentDidUpdateNode = t.classMethod(
+        "method",
+        t.identifier("componentDidUpdate"),
+        [t.identifier("prevProps")],
+        t.blockStatement([
+          t.expressionStatement(
+            t.callExpression(
+              t.memberExpression(
+                t.thisExpression(),
+                t.identifier("_propertyObserver")
+              ),
+              [
+                t.memberExpression(t.thisExpression(), t.identifier("props")),
+                t.identifier("prevProps"),
+              ]
+            )
+          ),
+        ])
+      );
+      path.node.body.push(componentDidUpdateNode);
+    }
+  }
+
+  // [Card] onShow、onHide 事件需要在 componentDidMount、componentWillUnmount 中监听注册
+  _genOnShowOnHideInjector(path: NodePath<t.ClassBody>) {
+    if (!Boolean(this.app.config["component"])) {
+      // 1. create -> componentDidMount / componentWillUnmount
+      [
+        ["onShow", "_lynxCardOnShow"],
+        ["onHide", "_lynxCardOnHide"],
+      ].forEach(([ttmlCardCycleName, onShowOnHideKey]) => {
+        // add -> this.getJSModule("GlobalEventEmitter").addListener("onShow", this._lynxCardOnShow)
+        // add -> this.getJSModule("GlobalEventEmitter").removeListener("onShow", this._lynxCardOnShow)
+        if (getClassMethodInClassBody(onShowOnHideKey, path)) {
+          // 1. create -> componentDidMount / componentWillUnmount
+          const componentDidMountNode = getOrCreatedClassMethodInClassBody(
+            "componentDidMount",
+            path
+          );
+          const componentWillUnmountNode = getOrCreatedClassMethodInClassBody(
+            "componentWillUnmount",
+            path
+          );
+          // 2. add
+          componentDidMountNode.body.body.unshift(
+            getGlobalEventEmitterStatement(
+              ttmlCardCycleName,
+              "addListener",
+              onShowOnHideKey
+            )
+          );
+          componentWillUnmountNode.body.body.unshift(
+            getGlobalEventEmitterStatement(
+              ttmlCardCycleName,
+              "removeListener",
+              onShowOnHideKey
+            )
+          );
+        }
+      });
+    }
+  }
+
+  // [Card/Component] 中需要在 constructor 中注入 _lynxComponentCreated、_lynxComponentAttached、_lynxCardOnLoad 执行语句
+  _genConstructorInjector(path: NodePath<t.ClassBody>) {
+    const constructorStatementBody = (path.node.body.find(
+      (node) => t.isClassMethod(node) && node.kind === "constructor"
+    ) as t.ClassMethod).body.body;
+    const lynxComponentCycleInjectToConstructor = [
+      "_lynxComponentCreated",
+      "_lynxComponentAttached",
+      "_lynxCardOnLoad",
+    ];
+    path.node.body.forEach((node) => {
+      if (t.isClassMethod(node) && t.isIdentifier(node.key)) {
+        if (lynxComponentCycleInjectToConstructor.includes(node.key.name)) {
+          constructorStatementBody.push(
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(
+                  t.thisExpression(),
+                  t.identifier(node.key.name)
+                ),
+                []
+              )
+            )
+          );
+        }
+      }
+    });
+  }
+
+  // [template] -> name 需要在拼好 renderXX 函数（已提前做好 ClassMethod）
+  _genTemplateInjector(path: NodePath<t.ClassBody>) {
+    const templateCollector = this.app.template.templateCollector;
+    templateCollector.forEach((template) => {
+      path.node.body.push(template);
+    });
+  }
+
+  _genEventHandlerInjector(
+    path: NodePath<t.ClassBody>,
+    name: string,
+    methods: Record<string, t.ClassMethod>
+  ) {
+    const eventsCollector = this.app.template.eventsCollector;
+
+    // 绑定事件的函数
+    // eventHandler = (_dataset) => (e) => {
+    //   // maybe e.stopPropagation()
+    //   e.currentTarget.dataset = _dataset;
+    //   // .rest statement
+    // }
+    // eventHandler = (e) => {
+    //   // maybe e.stopPropagation()
+    //   // .rest statement
+    // }
+    const stopPropagation = Boolean(eventsCollector.get(name)?.stopPropagation);
+    const withData = Boolean(eventsCollector.get(name)?.withData);
+    const method = methods[name] as t.ClassMethod;
+    const eventKey = method.key as t.Identifier;
+    const eventParam =
+      (method.params[0] as t.Identifier) || t.identifier("_event");
+    const eventBody = method.body.body;
+
+    // e.stopPropagation()
+    // 如果本身是 catch，但是 事件 中可能没有 event 这个参数，需要自己补充上，强制执行 stopPropagation
+    const stopPropagationExpressionStatement =
+      eventParam && stopPropagation
+        ? t.expressionStatement(
+            t.callExpression(
+              t.memberExpression(eventParam, t.identifier("stopPropagation")),
+              []
+            )
+          )
+        : t.emptyStatement();
+
+    // e.currentTarget.dataset = _dataset;
+    const datasetExpressionStatement =
+      eventParam && withData
+        ? t.expressionStatement(
+            t.assignmentExpression(
+              "=",
+              t.memberExpression(
+                t.memberExpression(eventParam, t.identifier("currentTarget")),
+                t.identifier("dataset")
+              ),
+              t.identifier("_dataset")
+            )
+          )
+        : t.emptyStatement();
+
+    // (e) => { ... }
+    const handler = t.arrowFunctionExpression(
+      eventParam ? [eventParam] : [],
+      t.blockStatement([
+        stopPropagationExpressionStatement,
+        datasetExpressionStatement,
+        ...eventBody,
+      ])
+    );
+    let eventHandlerClassProperty: t.ClassProperty;
+    if (withData) {
+      // xx: (_dataset) => (e) => { ... }
+      eventHandlerClassProperty = t.classProperty(
+        eventKey,
+        t.arrowFunctionExpression([t.identifier("_dataset")], handler)
+      );
+    } else {
+      // xx: (e) => { ... }
+      eventHandlerClassProperty = t.classProperty(eventKey, handler);
+    }
+
+    path.node.body.push(eventHandlerClassProperty);
   }
 }

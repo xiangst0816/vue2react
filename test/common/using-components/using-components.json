@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "arco-icon": "@byted-lynx/ui/components/icon/icon"
+  }
+}

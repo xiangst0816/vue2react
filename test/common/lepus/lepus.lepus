@@ -1,0 +1,40 @@
+function sizeStyle(size) {
+    let sizes = ['huge', 'large', 'medium', 'small', 'minimum'];
+
+    if (sizes.includes(size)) {
+        return '';
+    }
+    return ';width:' + size + ';height:' + size + ';';
+}
+
+function sizeClass(name, size) {
+    let sizes = ['huge', 'large', 'medium', 'small', 'minimum'];
+
+    if (sizes.includes(size)) {
+        return name + '-size-' + size;
+    }
+    return '';
+}
+
+export function textSizeClass(name, size) {
+    let sizes = ['huge', 'large', 'medium', 'small', 'minimum'];
+
+    if (sizes.includes(size)) {
+        return name + '-text-size-' + size;
+    }
+    return '';
+}
+
+function shapeClass(name, shape) {
+    return name + '-shape-' + shape;
+}
+
+function statusClass(name, animate, loaded) {
+    return name + '-status-' + animate ? loaded ? 'loaded' : 'preload' : 'loaded';
+}
+
+function statusErrorClass(name, hasError) {
+    return hasError ? name + '-status-error' : '';
+}
+
+export {sizeClass, shapeClass, sizeStyle, statusClass, statusErrorClass};

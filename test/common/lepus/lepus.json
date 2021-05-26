@@ -1,0 +1,11 @@
+{
+  "component": true,
+  "usingTemplateAPI": {
+    "templateFunctions": [
+      {
+        "path": "./lepus.lepus",
+        "name": "_styleFn"
+      }
+    ]
+  }
+}

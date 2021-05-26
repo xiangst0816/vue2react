@@ -36,3 +36,15 @@ test("mustache", ({ snapshot }) => {
 test("template", ({ snapshot }) => {
   snapshot(transform("template", path.resolve(__dirname, `common/template`)));
 });
+
+test("lepus", ({ snapshot }) => {
+  snapshot(transform("lepus", path.resolve(__dirname, `common/lepus`)));
+});
+
+test("config", ({ snapshot }) => {
+  snapshot(transform("config", path.resolve(__dirname, `common/config`)));
+});
+
+test("using-components", ({ snapshot }) => {
+  snapshot(transform("using-components", path.resolve(__dirname, `common/using-components`)));
+});
