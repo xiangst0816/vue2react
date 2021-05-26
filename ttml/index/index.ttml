@@ -1,1 +1,1 @@
-<text>123</text>
+<text data-xx="xxx" bindtap="taphandler">123</text>

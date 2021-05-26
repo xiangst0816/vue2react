@@ -1,5 +1,8 @@
 Card({
     data: {},
+    taphandler(e) {
+
+    },
     onLoad: function (a) {},
     onShow: function (b) {},
     onHide: function (c) {},

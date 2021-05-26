@@ -122,6 +122,7 @@ export default class ReactVisitor {
 
   genStaticProps(path: NodePath<t.Program>) {
     const props = new Map([
+      // ttml 默认可以在外部绑定 bindtap 的，这里做下默认填加
       [
         "onClick",
         {
@@ -299,32 +300,32 @@ export default class ReactVisitor {
     }
 
     // [Component] 中需要在 constructor 中注入 _lynxComponentCreated、_lynxComponentAttached 执行语句
-      const constructorStatementBody = (path.node.body.find(
-        (node) => t.isClassMethod(node) && node.kind === "constructor"
-      ) as t.ClassMethod).body.body;
+    const constructorStatementBody = (path.node.body.find(
+      (node) => t.isClassMethod(node) && node.kind === "constructor"
+    ) as t.ClassMethod).body.body;
 
-      const lynxComponentCycleInjectToConstructor = [
-        "_lynxComponentCreated",
-        "_lynxComponentAttached",
-        "_lynxCardOnLoad",
-      ];
-      path.node.body.forEach((node) => {
-        if (t.isClassMethod(node) && t.isIdentifier(node.key)) {
-          if (lynxComponentCycleInjectToConstructor.includes(node.key.name)) {
-            constructorStatementBody.push(
-              t.expressionStatement(
-                t.callExpression(
-                  t.memberExpression(
-                    t.thisExpression(),
-                    t.identifier(node.key.name)
-                  ),
-                  []
-                )
+    const lynxComponentCycleInjectToConstructor = [
+      "_lynxComponentCreated",
+      "_lynxComponentAttached",
+      "_lynxCardOnLoad",
+    ];
+    path.node.body.forEach((node) => {
+      if (t.isClassMethod(node) && t.isIdentifier(node.key)) {
+        if (lynxComponentCycleInjectToConstructor.includes(node.key.name)) {
+          constructorStatementBody.push(
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(
+                  t.thisExpression(),
+                  t.identifier(node.key.name)
+                ),
+                []
               )
-            );
-          }
+            )
+          );
         }
-      });
+      }
+    });
 
     // template -> name 需要在拼好 renderXX 函数（已提前做好 ClassMethod）
     const templateCollector = this.app.template.templateCollector;

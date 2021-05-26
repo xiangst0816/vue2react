@@ -11,7 +11,7 @@ const {
   formatCode,
 } = require("../dist/index");
 
-const name = "index";
+const name = "avatar";
 const distDir = path.resolve(__dirname, name);
 
 const baseDir = path.resolve(__dirname, `../ttml/${name}`);
@@ -33,7 +33,7 @@ function transformCode(templateCode, scriptCode, styleCode, configCode) {
   // console.log(script);
 
   // template
-  const template = templateIterator(templateCode,script);
+  const template = templateIterator(templateCode);
   // console.log(template);
   const lepus = lepusIterator(configCode, baseDir);
   const config = configIterator(configCode);
@@ -53,8 +53,8 @@ function transformCode(templateCode, scriptCode, styleCode, configCode) {
 
   const targetCode = generate(targetAst).code;
 
-  // const reactCode = targetCode
-  const reactCode = formatCode(targetCode, "react");
+  const reactCode = targetCode
+  // const reactCode = formatCode(targetCode, "react");
 
   // console.log("reactCode");
   // console.log(reactCode);

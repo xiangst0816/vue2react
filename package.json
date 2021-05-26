@@ -11,7 +11,21 @@
     "build-dist": "tsc",
     "dev-dist": "tsc -w",
     "deploy": "npm run build-lib && npm publish",
-    "lint": "tslint  --project tsconfig.json 'src/**/*.ts' 'docs/**/*.ts' 'docs/**/*.tsx'"
+    "lint": "tslint  --project tsconfig.json 'src/**/*.ts' 'docs/**/*.ts' 'docs/**/*.tsx'",
+    "test": "ava --verbose --no-cache",
+    "test:update": "ava --update-snapshots"
+  },
+  "ava": {
+    "serial": true,
+    "extensions": [
+      "ts"
+    ],
+    "require": [
+      "ts-node/register/transpile-only"
+    ],
+    "files": [
+      "test/*.spec.ts"
+    ]
   },
   "husky": {
     "hooks": {
@@ -46,6 +60,7 @@
     "url": "https://github.com/mcuking/vue-to-react/issues"
   },
   "homepage": "https://github.com/mcuking/vue-to-react#readme",
+
   "dependencies": {
     "@babel/generator": "^7.4.0",
     "@babel/parser": "^7.4.3",
@@ -62,6 +77,8 @@
     "vue-template-compiler": "^2.6.10"
   },
   "devDependencies": {
+    "ts-node": "^9.1.1",
+    "ava": "^3.15.0",
     "@babel/core": "^7.4.5",
     "@babel/plugin-proposal-class-properties": "^7.4.4",
     "@babel/preset-env": "^7.4.5",
