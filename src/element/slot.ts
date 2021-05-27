@@ -1,6 +1,7 @@
 import { anyObject, NodeType, ScriptProps } from "../utils/types";
 import * as t from "@babel/types";
 import _ from "lodash";
+import logger from "../utils/logUtil";
 import {
   getCollectedProperty,
   transformTextToExpression,
@@ -82,6 +83,6 @@ export function genSlotElement(
     }
   });
 
-  console.log(`[log] Not Support: <slot name="${slotSegment}">`); // TODO: DOC
+  logger.log(`[log] Not Support: <slot name="${slotSegment}">`); // TODO: DOC
   return (t.jSXEmptyExpression() as any) as t.JSXElement;
 }

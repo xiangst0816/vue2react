@@ -71,7 +71,7 @@ export default class ScriptVisitor {
         blockStatement
       );
     } else {
-      console.log(
+      logger.log(
         `ttml 卡片生命周期函数 ${ttmlCycleName} 没有对等的 ReactLynx 实现！`
       );
     }
@@ -91,7 +91,7 @@ export default class ScriptVisitor {
         blockStatement
       );
     } else {
-      console.log(
+      logger.log(
         `ttml 组件生命周期函数 ${ttmlCycleName} 没有对等的 ReactLynx 实现！`
       );
     }

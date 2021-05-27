@@ -4,6 +4,7 @@ import {
   NodeType,
   ScriptProps,
 } from "../utils/types";
+import logger from "../utils/logUtil";
 import * as t from "@babel/types";
 import jsxElementGenerator from "../jsxElementGenerator";
 
@@ -39,7 +40,7 @@ export function genRootElement(
       []
     );
 
-    console.log("[root] ReactLynx 不支持多个根节点，这里会包裹一层 View"); // TODO:DOC
+    logger.log("[root] ReactLynx 不支持多个根节点，这里会包裹一层 View"); // TODO:DOC
     (vnode.children || []).forEach((child: anyObject) => {
       // wrappedElement 对外， element 是内部的东西，看下要往 element 中塞入 children
       jsxElementGenerator(

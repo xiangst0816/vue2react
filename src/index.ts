@@ -67,15 +67,13 @@ export function readCode(name: string, baseDir: string): ICode {
 export function transformCode(
   code: ICode,
   componentName: string,
-  options: anyObject
+  options: anyObject // TODO: 增加内置参数控制，各类默认行为给一个可控入口
 ) {
   // script
   const script = scriptIterator(code.scriptCode);
   script.name = componentName;
 
-  // template
   const template = templateIterator(code.templateCode);
-  // console.log(template);
   const lepus = lepusIterator(code.config, code.lepusCodeMap);
   const app = {
     script,
@@ -89,12 +87,10 @@ export function transformCode(
 
   // collect-data + react-template => react-ast
   const targetAst = reactIterator(rast, app, hasStyle);
-
   const targetCode = generate(targetAst).code;
 
   // const reactCode = targetCode
   const reactCode = formatCode(targetCode, "react");
-
   return reactCode;
 }
 

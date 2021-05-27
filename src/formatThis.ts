@@ -11,16 +11,6 @@ import generate from "@babel/generator";
   const { name } = this -> const { name } = this.state
   ...
 */
-
-function getThisIdentify(script: Script, key: string) {
-  if (script.data[key]) {
-    return t.identifier("state");
-  } else if (script.props.get(key)) {
-    return t.identifier("props");
-  }
-  return null;
-}
-
 const replaceThisExpression = {
   ThisExpression(
     this: { script: Script },

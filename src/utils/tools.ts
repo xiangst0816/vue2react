@@ -146,8 +146,6 @@ export function genObjectExpressionFromObject(
 }
 
 export function getIdentifierFromTexts(attrs: string[]): string[] {
-  // console.log("！！！检查这里是否有未检出的 关键字");
-  // console.log(attrs);
   const list: string[] = [];
   // Notice: '25 * index', 'value1 + value2' 这里的 attr 拆分出来真正的变量
   attrs.forEach((attr) => {
@@ -214,14 +212,8 @@ export function transformTextToExpression(text: string) {
           path.parent.arguments.forEach((i) => {
             if (t.isIdentifier(i)) {
               identifiers.push(i.name);
-            } else {
-              // debugger;
             }
           });
-        } else {
-          // console.log(
-          //   `！！！！这个标识符未识别，不处理 -> ${path.node.name} <-`
-          // );
         }
       }
     },
