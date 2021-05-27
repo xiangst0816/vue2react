@@ -1,5 +1,4 @@
 import * as t from "@babel/types";
-import { getCollectedProperty } from "../utils/generatorUtils";
 import {
   anyObject,
   EventsCollector,
@@ -7,7 +6,10 @@ import {
   ScriptProps,
 } from "../utils/types";
 import jsxElementGenerator from "../jsxElementGenerator";
-import { transformTextToExpression } from "../utils/tools";
+import {
+  getCollectedProperty,
+  transformTextToExpression,
+} from "../utils/tools";
 
 export function injectElseCommand(
   command: anyObject,

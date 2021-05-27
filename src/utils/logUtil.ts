@@ -1,5 +1,5 @@
-import chalk from 'chalk';
-import { Log } from './types';
+import chalk from "chalk";
+import { Log } from "./types";
 
 class LogUtil {
   private static instance: LogUtil;
@@ -7,24 +7,24 @@ class LogUtil {
   prefix: string;
   logHistory: Log[];
 
-  private constructor(prefix = '') {
+  private constructor(prefix = "") {
     this.prefix = prefix;
     this.logHistory = [];
   }
 
-  public static getInstance(prefix = '') {
+  public static getInstance(prefix = "") {
     if (!this.instance) {
       this.instance = new LogUtil(prefix);
     }
     return this.instance;
   }
 
-  public log(msg: string, type = 'error') {
+  public log(msg: string, type = "error") {
     this.logHistory.push({
       msg,
-      type
+      type,
     });
-    if (type === 'error') {
+    if (type === "error") {
       console.log(chalk.red(`${this.prefix}${msg}`));
       throw msg;
     } else {
@@ -37,4 +37,4 @@ class LogUtil {
   }
 }
 
-export default LogUtil.getInstance('[Vue-to-React] ');
+export default LogUtil.getInstance("[Vue-to-React] ");

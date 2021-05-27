@@ -1,42 +1,37 @@
-const prettier = require('prettier/standalone');
-const prettierHtml = require('prettier/parser-html');
-const prettierBabylon = require('prettier/parser-babylon');
+const prettier = require("prettier/standalone");
+const prettierBabylon = require("prettier/parser-babylon");
 
-import { anyObject } from './types';
+import { anyObject } from "./types";
 
 const matchAndReplace = (str: string) =>
-  str.replace(RegExp('(<input.*?)(></input>)', 'g'), '$1/>');
+  str.replace(RegExp("(<input.*?)(></input>)", "g"), "$1/>");
 
-const toGB2312 = (str: string) => unescape(str.replace(/\\u/gi, '%u'));
+const toGB2312 = (str: string) => unescape(str.replace(/\\u/gi, "%u"));
 
 export default function formatCode(code: string, type: string) {
   const options: anyObject = {
-    vue: {
-      parser: 'vue',
-      plugins: [prettierHtml]
-    },
     react: {
-      parser: 'babel',
+      parser: "babel",
       plugins: [prettierBabylon],
-      arrowParens: 'avoid',
+      arrowParens: "avoid",
       bracketSpacing: true,
-      htmlWhitespaceSensitivity: 'css',
+      htmlWhitespaceSensitivity: "css",
       insertPragma: false,
       jsxBracketSameLine: false,
       jsxSingleQuote: false,
       printWidth: 80,
-      proseWrap: 'preserve',
-      quoteProps: 'as-needed',
+      proseWrap: "preserve",
+      quoteProps: "as-needed",
       requirePragma: false,
       semi: true,
       singleQuote: false,
       tabWidth: 2,
-      trailingComma: 'none',
-      useTabs: false
-    }
+      trailingComma: "none",
+      useTabs: false,
+    },
   };
 
-  if (type === 'react') {
+  if (type === "react") {
     code = matchAndReplace(toGB2312(code));
   }
 

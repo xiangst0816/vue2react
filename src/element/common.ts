@@ -1,9 +1,11 @@
 import { anyObject, EventsCollector, NodeType } from "../utils/types";
 import * as t from "@babel/types";
-import { getCollectedProperty } from "../utils/generatorUtils";
 import { lynxEventReMap } from "../utils/eventMap";
 import _ from "lodash";
-import { transformTextToExpression } from "../utils/tools";
+import {
+  getCollectedProperty,
+  transformTextToExpression,
+} from "../utils/tools";
 
 function collectStyleAttrs(
   attr: anyObject,

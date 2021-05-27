@@ -1,7 +1,9 @@
-import { getCollectedProperty } from "../utils/generatorUtils";
 import { anyObject, NodeType } from "../utils/types";
 import * as t from "@babel/types";
-import { transformTextToExpression } from "../utils/tools";
+import {
+  getCollectedProperty,
+  transformTextToExpression,
+} from "../utils/tools";
 
 export function wrapIfCommand(
   command: anyObject,

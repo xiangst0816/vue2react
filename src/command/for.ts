@@ -1,7 +1,9 @@
-import { getCollectedProperty } from "../utils/generatorUtils";
 import { anyObject, NodeType } from "../utils/types";
 import * as t from "@babel/types";
-import {transformTextToExpression} from "../utils/tools";
+import {
+  getCollectedProperty,
+  transformTextToExpression,
+} from "../utils/tools";
 
 export function wrapForCommand(
   command: anyObject,
@@ -14,7 +16,7 @@ export function wrapForCommand(
       if (node.type === NodeType.Mustache) {
         // Mustache
         const { identifiers, expression } = transformTextToExpression(
-            node.text
+          node.text
         );
         identifiers.forEach((i) => attrsCollector.add(i));
         return expression;

@@ -1,8 +1,10 @@
 import { anyObject, NodeType, ScriptProps } from "../utils/types";
 import * as t from "@babel/types";
-import { getCollectedProperty } from "../utils/generatorUtils";
 import _ from "lodash";
-import { transformTextToExpression } from "../utils/tools";
+import {
+  getCollectedProperty,
+  transformTextToExpression,
+} from "../utils/tools";
 
 export function genSlotElement(
   vnode: anyObject,
