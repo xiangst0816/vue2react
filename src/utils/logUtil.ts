@@ -37,4 +37,4 @@ class LogUtil {
   }
 }
 
-export default LogUtil.getInstance("[Vue-to-React] ");
+export default LogUtil.getInstance("[Ttml-to-React] ");

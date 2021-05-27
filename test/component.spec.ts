@@ -1,29 +1,39 @@
 import test from "ava";
 import path from "path";
-
-import { transform } from "./utils";
+import { transform } from "../src";
 
 test("life-cycle", ({ snapshot }) => {
   snapshot(
-    transform("life-cycle", path.resolve(__dirname, `components/life-cycle`))
+    transform({
+      baseDir: path.resolve(__dirname, `components/life-cycle`),
+      filename: "life-cycle",
+    })
   );
 });
 
 test("methods-events", ({ snapshot }) => {
   snapshot(
-    transform(
-      "methods-events",
-      path.resolve(__dirname, `components/methods-events`)
-    )
+    transform({
+      baseDir: path.resolve(__dirname, `components/methods-events`),
+      filename: "methods-events",
+    })
   );
 });
 
 test("observer", ({ snapshot }) => {
   snapshot(
-    transform("observer", path.resolve(__dirname, `components/observer`))
+    transform({
+      baseDir: path.resolve(__dirname, `components/observer`),
+      filename: "observer",
+    })
   );
 });
 
 test("slot", ({ snapshot }) => {
-  snapshot(transform("slot", path.resolve(__dirname, `components/slot`)));
+  snapshot(
+    transform({
+      baseDir: path.resolve(__dirname, `components/slot`),
+      filename: "slot",
+    })
+  );
 });

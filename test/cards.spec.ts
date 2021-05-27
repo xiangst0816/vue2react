@@ -1,15 +1,31 @@
 import test from "ava";
 import path from "path";
 
-import { transform } from "./utils";
+import { transform } from "../src";
 
 test("life-cycle", ({ snapshot }) => {
-  snapshot(transform("life-cycle", path.resolve(__dirname, `cards/life-cycle`)));
+  snapshot(
+    transform({
+      baseDir: path.resolve(__dirname, `cards/life-cycle`),
+      filename: "life-cycle",
+    })
+  );
 });
 
 test("show-hide", ({ snapshot }) => {
-  snapshot(transform("show-hide", path.resolve(__dirname, `cards/show-hide`)));
+  snapshot(
+    transform({
+      baseDir: path.resolve(__dirname, `cards/show-hide`),
+      filename: "show-hide",
+    })
+  );
 });
+
 test("data-changed", ({ snapshot }) => {
-  snapshot(transform("data-changed", path.resolve(__dirname, `cards/data-changed`)));
+  snapshot(
+    transform({
+      baseDir: path.resolve(__dirname, `cards/data-changed`),
+      filename: "data-changed",
+    })
+  );
 });

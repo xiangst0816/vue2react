@@ -1,130 +1,129 @@
-import lepusIterator from "./lepusIterator";
-
-// const compiler = require("vue-template-compiler");
-
 import fs from "fs";
 import path from "path";
 import generate from "@babel/generator";
 
+import lepusIterator from "./lepusIterator";
 import scriptIterator from "./scriptIterator";
 import templateIterator from "./templateIterator";
 import reactIterator from "./reactIterator";
 import reactTemplateBuilder from "./reactTemplateBuilder";
 import formatCode from "./utils/formatCode";
-import logger from "./utils/logUtil";
 import { anyObject } from "./utils/types";
-import configIterator from "./configIterator";
 
-export { default as configIterator } from "./configIterator";
-export { default as lepusIterator } from "./lepusIterator";
-export { default as reactIterator } from "./reactIterator";
-export { default as scriptIterator } from "./scriptIterator";
-export { default as templateIterator } from "./templateIterator";
-export { default as reactTemplateBuilder } from "./reactTemplateBuilder";
-export { default as formatCode } from "./utils/formatCode";
-//
-// export function transformCode(sourceCode: string) {
-//   try {
-//     // clear log history
-//     logger.clearHistory();
-//
-//     // const result = compiler.parseComponent(formatCode(sourceCode, "vue"), {
-//     //   pad: "line",
-//     // });
-//     //
-//     // if (result.errors.length > 0) {
-//     //   return result.errors.forEach((error: string) =>
-//     //     logger.log(`${error} ---vue-template-compiler: parseComponent`, "error")
-//     //   );
-//     // }
-//     //
-//     // // 原始 js 代码
-//     // let preScript = "export default {}";
-//     // if (result.script && result.script.content) {
-//     //   preScript = result.script.content;
-//     // }
-//
-//     // template string
-//     // const preTemplate = result.template.content;
-//     const styles:any = [];
-//     // const styles = result.styles;
-//
-//     const hasStyle = styles.length > 0;
-//
-//     const preConfig = "";
-//     const root = ""; // 组件位置
-//
-//     // iterator 搜集数据
-//     const script = scriptIterator('');
-//     // const script = scriptIterator(preScript);
-//     const template = templateIterator('');
-//     // const template = templateIterator(preTemplate);
-//     const config = configIterator(preConfig);
-//     const lepus = lepusIterator(preConfig, root);
-//
-//     const app = {
-//       script,
-//       template,
-//       lepus,
-//       config,
-//     };
-//
-//     // react 模板相关
-//     const rast = reactTemplateBuilder(app);
-//
-//     // collect-data + react-template => react-ast
-//     const targetAst = reactIterator(rast, app, hasStyle);
-//     const targetCode = generate(targetAst).code;
-//
-//     const reactCode = formatCode(targetCode, "react");
-//
-//     return [reactCode, styles, logger.logHistory];
-//   } catch (error) {
-//     logger.log(error.toString(), "error");
-//   }
-// }
+export interface ICode {
+  templateCode: string;
+  scriptCode: string;
+  config: anyObject;
+  lepusCodeMap: Map<string, string>;
+  styleCode?: string;
+}
 
-// src: 源码 的路径
-// targetPath: 结果的路径
-// dist: 结果的路径文件夹
-// export function transformFile(src: string, targetPath: string, dist: string) {
-//   const sourceCode = fs.readFileSync(path.resolve(__dirname, src), "utf8");
-//
-//   const [script, styles] = transformCode(sourceCode);
-//
-//   // write react js file
-//   fs.writeFileSync(targetPath, script);
-//
-//   // write react css file, delete null line in the start and end
-//   if (styles.length > 0) {
-//     const styleContent = styles
-//       .map((style: anyObject) => style.content.replace(/^\s+|\s+$/g, ""))
-//       .join("\n");
-//     fs.writeFileSync(path.resolve(dist, "index.scss"), styleContent);
-//   }
-// }
+export function readCode(name: string, baseDir: string): ICode {
+  const scriptPath = path.resolve(baseDir, `${name}.js`);
+  const stylePath = path.resolve(baseDir, `${name}.ttss`);
+  const templatePath = path.resolve(baseDir, `${name}.ttml`);
+  const configPath = path.resolve(baseDir, `${name}.json`);
 
-// export function transformFile2(
-//   srcPath: string,
-//   targetName: string,
-//   distDir: string
-// ) {
-//   const sourceCode = fs.readFileSync(srcPath, "utf8");
-//
-//   const [script, styles] = transformCode(sourceCode);
-//
-//   // write react js file
-//   if (!fs.existsSync(distDir)) {
-//     fs.mkdirSync(distDir);
-//   }
-//
-//   fs.writeFileSync(path.resolve(distDir, targetName), script);
-//
-//   // write react css file, delete null line in the start and end
-//   if (styles.length > 0) {
-//     const styleContent = styles
-//       .map((style: anyObject) => style.content.replace(/^\s+|\s+$/g, ""))
-//       .join("\n");
-//     fs.writeFileSync(path.resolve(distDir, "index.scss"), styleContent);
-//   }
-// }
+  function getCode(codePath: string) {
+    return fs.readFileSync(codePath, "utf8");
+  }
+
+  const configCode = getCode(configPath);
+  const lepusCodeMap = new Map();
+  let configObject: anyObject = {};
+
+  try {
+    configObject = JSON.parse(configCode);
+    if (
+      "usingTemplateAPI" in configObject &&
+      "templateFunctions" in configObject.usingTemplateAPI
+    ) {
+      const templateFunctions =
+        (configObject.usingTemplateAPI || []).templateFunctions || [];
+      for (let i = 0; templateFunctions.length > i; i++) {
+        if (templateFunctions[i]) {
+          const lepusPath = templateFunctions[i].path;
+          const lepusName = templateFunctions[i].name;
+          if (lepusPath && lepusName) {
+            const filepath = path.resolve(baseDir, lepusPath);
+            lepusCodeMap.set(lepusName, getCode(filepath));
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // empty
+  }
+
+  return {
+    templateCode: getCode(templatePath),
+    scriptCode: getCode(scriptPath),
+    config: configObject,
+    lepusCodeMap: lepusCodeMap,
+    styleCode: getCode(stylePath),
+  };
+}
+
+export function transformCode(
+  code: ICode,
+  componentName: string,
+  options: anyObject
+) {
+  // script
+  const script = scriptIterator(code.scriptCode);
+  script.name = componentName;
+
+  // template
+  const template = templateIterator(code.templateCode);
+  // console.log(template);
+  const lepus = lepusIterator(code.config, code.lepusCodeMap);
+  const app = {
+    script,
+    template,
+    lepus,
+    config: code.config,
+  };
+
+  const rast = reactTemplateBuilder(app);
+  const hasStyle = Boolean(code.styleCode);
+
+  // collect-data + react-template => react-ast
+  const targetAst = reactIterator(rast, app, hasStyle);
+
+  const targetCode = generate(targetAst).code;
+
+  // const reactCode = targetCode
+  const reactCode = formatCode(targetCode, "react");
+
+  return reactCode;
+}
+
+export interface ITransformParams {
+  baseDir: string; // eg: xx/xx/components/button.ttml -> xx/xx/components/
+  filename: string; // eg: xx/xx/components/button.ttml -> button
+  componentName?: string; // 转为组件的话，组件名称；eg: arco-button / ArcoButton
+  options?: anyObject; // 其他编译参数
+}
+
+export function transform(params: ITransformParams): string | undefined {
+  const baseDir = params.baseDir;
+  const filename = params.filename;
+  const componentName = params.componentName || params.filename;
+  const code = readCode(filename, baseDir);
+  return transformCode(code, componentName, params.options || {});
+}
+
+export interface ITransformFileParams extends ITransformParams {
+  distDir: string; // 结果文件夹
+}
+
+export function transformFile(params: ITransformFileParams): void {
+  const script = transform({
+    baseDir: params.baseDir,
+    filename: params.filename,
+    componentName: params.componentName,
+    options: params.options,
+  });
+  // write react js file
+  fs.writeFileSync(`${params.distDir}/${params.filename}.jsx`, script);
+}

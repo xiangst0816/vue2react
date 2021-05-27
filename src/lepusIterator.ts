@@ -1,27 +1,27 @@
-import fs from "fs";
-import path from "path";
 import * as parser from "@babel/parser";
 import traverse from "@babel/traverse";
-import { Lepus } from "./utils/types";
+import { anyObject, Lepus } from "./utils/types";
 import * as t from "@babel/types";
 
-export default function lepusIterator(config: string, root: string): Lepus[] {
-  const configObject = JSON.parse(config);
+export default function lepusIterator(
+  config: anyObject,
+  lepusCodeMap: Map<string, string>
+): Lepus[] {
   const list: Lepus[] = [];
   if (
-    "usingTemplateAPI" in configObject &&
-    "templateFunctions" in configObject.usingTemplateAPI
+    "usingTemplateAPI" in config &&
+    "templateFunctions" in config.usingTemplateAPI
   ) {
     const templateFunctions =
-      (configObject.usingTemplateAPI || []).templateFunctions || [];
+      (config.usingTemplateAPI || []).templateFunctions || [];
 
     for (let i = 0; templateFunctions.length > i; i++) {
       if (templateFunctions[i]) {
         const lepusPath = templateFunctions[i].path;
         const lepusName = templateFunctions[i].name;
         const lepusSpecifiers: string[][] = [];
-        const filepath = path.resolve(root, lepusPath);
-        const lepusCode = fs.readFileSync(filepath, "utf8");
+
+        const lepusCode = lepusCodeMap.get(lepusName) || "";
 
         const lepusAst = parser.parse(lepusCode, { sourceType: "module" });
         traverse(lepusAst, {
