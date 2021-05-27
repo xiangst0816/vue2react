@@ -219,10 +219,9 @@ export function transformTextToExpression(text: string) {
             }
           });
         } else {
-          // TODO
-          console.log(
-            `！！！！这个标识符未识别，不处理 -> ${path.node.name} <-`
-          );
+          // console.log(
+          //   `！！！！这个标识符未识别，不处理 -> ${path.node.name} <-`
+          // );
         }
       }
     },

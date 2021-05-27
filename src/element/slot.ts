@@ -82,8 +82,6 @@ export function genSlotElement(
     }
   });
 
-  const msg = `/* Not Support: <slot name="${slotSegment}"> */`;
-
-  console.log(msg); // TODO: DOC
+  console.log(`[log] Not Support: <slot name="${slotSegment}">`); // TODO: DOC
   return (t.jSXEmptyExpression() as any) as t.JSXElement;
 }

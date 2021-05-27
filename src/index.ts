@@ -124,6 +124,12 @@ export function transformFile(params: ITransformFileParams): void {
     componentName: params.componentName,
     options: params.options,
   });
+
+  const dist = path.resolve(params.distDir);
+  if (!fs.existsSync(dist)) {
+    fs.mkdirSync(dist);
+  }
+
   // write react js file
-  fs.writeFileSync(`${params.distDir}/${params.filename}.jsx`, script);
+  fs.writeFileSync(path.resolve(dist, `${params.filename}.jsx`), script);
 }

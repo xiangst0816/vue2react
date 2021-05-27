@@ -215,12 +215,12 @@ export default class ReactVisitor {
       } else if (this.app.script.computed[attr]) {
         computed.push(attr);
       } else {
-        console.warn(`------------------------`);
-        console.warn(
-          `属性映射未识别，原样输出（也许是在 template 中的变量） ->`,
-          attr
-        );
-        console.warn(`------------------------`);
+        // console.warn(`------------------------`);
+        // console.warn(
+        //   `属性映射未识别，原样输出（也许是在 template 中的变量） ->`,
+        //   attr
+        // );
+        // console.warn(`------------------------`);
       }
 
       return;
