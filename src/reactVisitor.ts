@@ -40,8 +40,7 @@ export default class ReactVisitor {
               let local: t.Identifier = t.identifier(specifier[0]);
               let imported: t.Identifier = t.identifier(specifier[1]);
               return t.importSpecifier(local, imported);
-            })
-            .filter((i: any) => Boolean(i)),
+            }),
           t.stringLiteral(sourceString)
         );
         path.node.body.unshift(importReactComponent);
@@ -230,7 +229,7 @@ export default class ReactVisitor {
       blocks.push(
         t.variableDeclaration("const", [
           t.variableDeclarator(
-            t.objectPattern(dataProperties as any),
+            t.objectPattern(dataProperties),
             t.memberExpression(t.thisExpression(), t.identifier("state"))
           ),
         ])
@@ -241,7 +240,7 @@ export default class ReactVisitor {
       blocks.push(
         t.variableDeclaration("const", [
           t.variableDeclarator(
-            t.objectPattern(propProperties as any),
+            t.objectPattern(propProperties),
             t.memberExpression(t.thisExpression(), t.identifier("props"))
           ),
         ])
@@ -252,7 +251,7 @@ export default class ReactVisitor {
       blocks.push(
         t.variableDeclaration("const", [
           t.variableDeclarator(
-            t.objectPattern(methodProperties as any),
+            t.objectPattern(methodProperties),
             t.thisExpression()
           ),
         ])
@@ -275,7 +274,13 @@ export default class ReactVisitor {
       });
     }
 
-    blocks.push(t.returnStatement(this.app.template.ast));
+    // 如果
+
+    if (t.isJSXExpressionContainer(this.app.template.ast)) {
+      blocks.push(t.returnStatement(this.app.template.ast.expression as t.Expression));
+    } else if (t.isExpression(this.app.template.ast)) {
+      blocks.push(t.returnStatement(this.app.template.ast));
+    }
 
     // generate render function
     const render = t.classMethod(
@@ -375,7 +380,7 @@ export default class ReactVisitor {
       t.isMemberExpression(path.parent.callee)
     ) {
       // is lepus identifier
-      path.parent.callee = path.parent.callee.property;
+      path.parent.callee = path.parent.callee.property as t.Expression;
     }
   }
 

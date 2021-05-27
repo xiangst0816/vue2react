@@ -14,17 +14,28 @@ import {
 export function injectElseCommand(
   command: anyObject,
   vnode: anyObject,
-  element: t.JSXElement,
-  parentElement: t.JSXElement | undefined,
+  element: t.JSXElement | t.JSXExpressionContainer,
+  parentElement: t.JSXElement | t.JSXExpressionContainer | undefined,
   attrsCollector: Set<string>,
   templateCollector: Set<t.ClassMethod>,
   eventsCollector: EventsCollector,
   slotsCollector: Map<string, ScriptProps>
 ) {
+  if (!t.isJSXElement(parentElement)) {
+    throw new Error("[else] tt:else 父节及自己点都必须是 Element");
+  }
+
   // Support following syntax:
   // <div tt:if="{show}"/><div tt:else/> -> {show ? <div/> : <div/>}
   // <div tt:if="{show1}"/><div tt:elif="{show2}"/><div tt:else/> -> {show1 ? <div/>: show2 ? <div/> : <div/>}
   const parentJsxElementChildren = parentElement?.children || [];
+
+  let elementExpression: t.Expression;
+  if (t.isJSXElement(element)) {
+    elementExpression = element;
+  } else {
+    elementExpression = element.expression as t.Expression;
+  }
 
   // if-else 最合适的挂载点
   let previousConditionalExpression: t.ConditionalExpression | undefined;
@@ -68,7 +79,7 @@ export function injectElseCommand(
   }
 
   if (command.name === "else") {
-    previousConditionalExpression.alternate = element;
+    previousConditionalExpression.alternate = elementExpression;
   } else if (command.name === "elif") {
     const test = getCollectedProperty(
       (command.children || []).map((node: anyObject) => {
@@ -96,19 +107,21 @@ export function injectElseCommand(
       // Normal: <view tt:elif="{{name}}"></view>
       previousConditionalExpression.alternate = t.conditionalExpression(
         test,
-        element,
+        elementExpression,
         previousConditionalExpression.alternate
       );
     } else {
       // Abnormal: <view tt:elif></view> -> <view tt:else></view>
-      previousConditionalExpression.alternate = element;
+      previousConditionalExpression.alternate = elementExpression;
     }
   }
 
   // {bool ? <View /> : {this.props["renderIcon"]}} -> {bool ? <View /> : this.props["renderIcon"]}
   if (t.isJSXExpressionContainer(previousConditionalExpression.alternate)) {
     const alternate = previousConditionalExpression.alternate as t.JSXExpressionContainer;
-    previousConditionalExpression.alternate = alternate.expression;
+    if (t.isExpression(alternate.expression)) {
+      previousConditionalExpression.alternate = alternate.expression;
+    }
   }
 
   // 递归一次子组件

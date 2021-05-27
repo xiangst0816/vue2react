@@ -8,9 +8,13 @@ import {
 export function wrapForCommand(
   command: anyObject,
   vnode: anyObject,
-  element: t.JSXElement,
+  element: t.JSXElement | t.JSXExpressionContainer,
   attrsCollector: Readonly<Set<string>>
 ) {
+  if (!t.isJSXElement(element)) {
+    throw new Error("[fpr] tt:fpr 自己必须是 Element");
+  }
+
   const forIdentifier = getCollectedProperty(
     (command.children || []).map((node: anyObject) => {
       if (node.type === NodeType.Mustache) {

@@ -14,8 +14,8 @@ export function genRootElement(
   templateCollector: Set<t.ClassMethod>,
   eventsCollector: EventsCollector,
   slotsCollector: Map<string, ScriptProps>
-): t.JSXElement {
-  let element: t.JSXElement;
+): t.JSXElement | t.JSXExpressionContainer {
+  let element: t.JSXElement | t.JSXExpressionContainer;
 
   const elementList = (vnode.children || []).filter(
     (node: anyObject) => node.type === NodeType.Element
@@ -57,11 +57,12 @@ export function genRootElement(
   // 根节点自动加 onClick 属性；外部绑定 bindtap 这里通过这个方式触发
   // <View onClick={this.props.onClick}>{}</View>
   if (
+    t.isJSXElement(element) &&
     element &&
     element.openingElement &&
     element.openingElement.attributes &&
     !element.openingElement.attributes.find(
-      (node) => node.name.name === "onClick"
+      (node) =>t.isJSXAttribute(node) && node.name.name === "onClick"
     )
   ) {
     element.openingElement.attributes.push(

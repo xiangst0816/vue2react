@@ -113,6 +113,18 @@ export function collectTemplateRenderMethods(
       t.objectProperty(t.identifier(attr), t.identifier(attr), false, true)
     );
 
+    let returnStatement: t.ReturnStatement;
+    if (
+      t.isJSXExpressionContainer(templateJsxElement) &&
+      t.isExpression(templateJsxElement.expression)
+    ) {
+      returnStatement = t.returnStatement(templateJsxElement.expression);
+    } else if (t.isExpression(templateJsxElement)) {
+      returnStatement = t.returnStatement(templateJsxElement);
+    } else {
+      returnStatement = t.returnStatement();
+    }
+
     templateCollector.add(
       t.classMethod(
         "method",
@@ -122,14 +134,12 @@ export function collectTemplateRenderMethods(
           // data mapping
           t.variableDeclaration("const", [
             t.variableDeclarator(
-              t.objectPattern(
-                (dataProperties as any) as t.AssignmentProperty[]
-              ), // TODO: check type
+              t.objectPattern(dataProperties), // TODO: check type
               t.identifier("data")
             ),
           ]),
           // sub template
-          t.returnStatement(templateJsxElement),
+          returnStatement,
         ])
       )
     );
@@ -140,8 +150,10 @@ export function collectTemplateRenderMethods(
   }
 }
 
-export function genTemplateElement(vnode: anyObject): t.JSXElement {
-  let element: t.JSXElement; // 当前 element
+export function genTemplateElement(
+  vnode: anyObject
+): t.JSXElement | t.JSXExpressionContainer {
+  let element: t.JSXElement | t.JSXExpressionContainer; // 当前 element
 
   const templateIsAttr = getTemplateIsAttr(vnode);
   const templateDataAttr = getTemplateDataAttr(vnode);
@@ -214,9 +226,7 @@ export function genTemplateElement(vnode: anyObject): t.JSXElement {
         t.isLogicalExpression(textAst.program.body[0].expression))
     ) {
       // 直接返回 jsx 表达式
-      element = (t.jSXExpressionContainer(
-        textAst.program.body[0].expression
-      ) as any) as t.JSXElement;
+      element = t.jSXExpressionContainer(textAst.program.body[0].expression);
     } else {
       throw new Error("[template] is 属性没找到有效的表达式");
     }

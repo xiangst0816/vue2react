@@ -7,7 +7,7 @@ import {
 
 export function wrapIfCommand(
   command: anyObject,
-  element: t.JSXElement,
+  element: t.JSXElement | t.JSXExpressionContainer,
   attrsCollector: Readonly<Set<string>>
 ) {
   // Support following syntax:
@@ -34,21 +34,17 @@ export function wrapIfCommand(
     })
   );
 
-  if (
-    t.isJSXExpressionContainer(element as any) &&
-    t.isMemberExpression(
-      ((element as any) as t.JSXExpressionContainer).expression
-    )
-  ) {
+  if (t.isJSXExpressionContainer(element)) {
     // Support following syntax:
     // { this.renderTemplate } -> { test ? this.renderTemplate : null }
-    return t.jSXExpressionContainer(
-      t.conditionalExpression(
-        test,
-        ((element as any) as t.JSXExpressionContainer).expression,
-        t.nullLiteral()
-      )
-    );
+    if (t.isExpression(element.expression)) {
+      return t.jSXExpressionContainer(
+        t.conditionalExpression(test, element.expression, t.nullLiteral())
+      );
+    } else {
+      // do nothing
+      return element;
+    }
   }
 
   return t.jSXExpressionContainer(

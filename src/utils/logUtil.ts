@@ -26,7 +26,7 @@ class LogUtil {
     });
     if (type === "error") {
       console.log(chalk.red(`${this.prefix}${msg}`));
-      throw msg;
+      // throw msg;
     } else {
       console.log(chalk.green(`${this.prefix}${msg}`));
     }

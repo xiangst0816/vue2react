@@ -125,7 +125,7 @@ export default function formatThisExpression(
   let block: t.Statement[] = [];
   path.traverse(
     {
-      enter(subpath: NodePath<any>) {
+      enter(subpath) {
         subpath.traverse(replaceThisExpression, { script });
         if (
           subpath.parentPath.parent === path.node &&

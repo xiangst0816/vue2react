@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import mkdirp from "mkdirp";
 import generate from "@babel/generator";
 
 import lepusIterator from "./lepusIterator";
@@ -111,6 +112,7 @@ export function transform(params: ITransformParams): string | undefined {
 
 export interface ITransformFileParams extends ITransformParams {
   distDir: string; // 结果文件夹
+  distName?: string; // index.jsx
 }
 
 export function transformFile(params: ITransformFileParams): void {
@@ -123,9 +125,11 @@ export function transformFile(params: ITransformFileParams): void {
 
   const dist = path.resolve(params.distDir);
   if (!fs.existsSync(dist)) {
-    fs.mkdirSync(dist);
+    mkdirp.sync(dist);
   }
 
+  const distName = params.distName || `${params.filename}.jsx`;
+
   // write react js file
-  fs.writeFileSync(path.resolve(dist, `${params.filename}.jsx`), script);
+  fs.writeFileSync(path.resolve(dist, distName), script);
 }

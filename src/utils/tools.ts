@@ -3,6 +3,7 @@ import * as parser from "@babel/parser";
 import traverse, { NodePath } from "@babel/traverse";
 import _ from "lodash";
 import { ScriptProps } from "./types";
+import generate from "@babel/generator";
 
 function getFormatPropType(type: string) {
   return type === "boolean" ? "bool" : type;
@@ -142,7 +143,7 @@ export function genObjectExpressionFromObject(
     return objAst.program.body[0].declarations[0].init;
   }
 
-  return t.objectExpression([t.objectProperty()]);
+  return t.objectExpression([]);
 }
 
 export function getIdentifierFromTexts(attrs: string[]): string[] {
@@ -175,46 +176,51 @@ export function transformTextToExpression(text: string) {
   traverse(ast, {
     Identifier(path) {
       if (!identifiers.includes(path.node.name)) {
-        if (
-          t.isMemberExpression(path.parent) &&
-          path.parent.object === path.node
-        ) {
-          // item.a, item.a.d -> [item]
+        // if (
+        //   t.isMemberExpression(path.parent) &&
+        //   path.parent.object === path.node
+        // ) {
+        //   // item.a, item.a.d -> [item]
+        //   identifiers.push(path.node.name);
+        // } else if (
+        //   // index -> [index]
+        //   t.isExpressionStatement(path.parent) &&
+        //   path.parent.expression === path.node
+        // ) {
+        //   identifiers.push(path.node.name);
+        // } else if (
+        //   // item+1 -> [item]
+        //   t.isBinaryExpression(path.parent)
+        // ) {
+        //   identifiers.push(path.node.name);
+        // } else if (
+        //   // {...item} -> [item]
+        //   t.isSpreadElement(path.parent)
+        // ) {
+        //   identifiers.push(path.node.name);
+        // } else if (
+        //   // {a||b} -> [a,b]
+        //   t.isLogicalExpression(path.parent)
+        // ) {
+        //   identifiers.push(path.node.name);
+        // } else if (
+        //   // {a?b:1} -> [a,b]
+        //   t.isConditionalExpression(path.parent)
+        // ) {
+        //   identifiers.push(path.node.name);
+        // } else if (t.isCallExpression(path.parent)) {
+        //   // sizeStyle(shape, src) -> [shape,src]
+        //   path.parent.arguments.forEach((i) => {
+        //     if (t.isIdentifier(i)) {
+        //       identifiers.push(i.name);
+        //     }
+        //   });
+        // } else {
+          // const res = generate(ast).code;
+          // console.log('resresresresres');
+          // console.log(res);
           identifiers.push(path.node.name);
-        } else if (
-          // index -> [index]
-          t.isExpressionStatement(path.parent) &&
-          path.parent.expression === path.node
-        ) {
-          identifiers.push(path.node.name);
-        } else if (
-          // item+1 -> [item]
-          t.isBinaryExpression(path.parent)
-        ) {
-          identifiers.push(path.node.name);
-        } else if (
-          // {...item} -> [item]
-          t.isSpreadElement(path.parent)
-        ) {
-          identifiers.push(path.node.name);
-        } else if (
-          // {a||b} -> [a,b]
-          t.isLogicalExpression(path.parent)
-        ) {
-          identifiers.push(path.node.name);
-        } else if (
-          // {a?b:1} -> [a,b]
-          t.isConditionalExpression(path.parent)
-        ) {
-          identifiers.push(path.node.name);
-        } else if (t.isCallExpression(path.parent)) {
-          // sizeStyle(shape, src) -> [shape,src]
-          path.parent.arguments.forEach((i) => {
-            if (t.isIdentifier(i)) {
-              identifiers.push(i.name);
-            }
-          });
-        }
+        // }
       }
     },
   });

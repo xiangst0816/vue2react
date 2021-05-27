@@ -63,13 +63,13 @@ export function genSlotElement(
       });
     }
 
-    return (t.jSXExpressionContainer(
+    return t.jSXExpressionContainer(
       t.memberExpression(
         t.memberExpression(t.thisExpression(), t.identifier("props"), false),
         slotNameElement,
         false
       )
-    ) as any) as t.JSXElement;
+    );
   }
 
   // 这种模式不支持，会影响 react-lynx 的解析
@@ -84,5 +84,5 @@ export function genSlotElement(
   });
 
   logger.log(`[log] Not Support: <slot name="${slotSegment}">`); // TODO: DOC
-  return (t.jSXEmptyExpression() as any) as t.JSXElement;
+  return t.jSXExpressionContainer(t.jSXEmptyExpression());
 }

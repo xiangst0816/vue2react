@@ -14,7 +14,7 @@ function collectStyleAttrs(
 ) {
   const styleDeclarations = attr.children;
   if (styleDeclarations && styleDeclarations.length > 0) {
-    const objectProperties: (t.ObjectProperty | t.SpreadElement)[] = [];
+    const objectProperties: (t.ObjectProperty | t.SpreadElement | t.ObjectMethod)[] = [];
 
     styleDeclarations.forEach((styleDeclaration: anyObject) => {
       if (styleDeclaration.type === NodeType.StyleDeclaration) {
@@ -99,7 +99,7 @@ function collectStyleAttrs(
     styleAttrs.push(
       t.jSXAttribute(
         t.jSXIdentifier("style"),
-        t.jSXExpressionContainer(t.objectExpression(objectProperties as any))
+        t.jSXExpressionContainer(t.objectExpression(objectProperties))
       )
     );
   }

@@ -1,7 +1,7 @@
 import * as parser from "@babel/parser";
 import traverse from "@babel/traverse";
 import { anyObject, Lepus } from "./utils/types";
-import * as t from "@babel/types";
+import * as t  from "@babel/types";
 
 export default function lepusIterator(
   config: anyObject,
@@ -28,17 +28,22 @@ export default function lepusIterator(
           ExportNamedDeclaration(path) {
             if (
               t.isFunctionDeclaration(path.node.declaration) &&
-              path.node.declaration.id.name
+              path.node?.declaration?.id?.name
             ) {
               const name = path.node.declaration.id.name;
               lepusSpecifiers.push([name, name]);
             } else if (path.node.specifiers.length > 0) {
               const specifiers = path.node.specifiers;
+
               specifiers.forEach((specifier) => {
-                lepusSpecifiers.push([
-                  specifier.local.name,
-                  specifier.exported.name,
-                ]);
+                if (t.isExportSpecifier(specifier)) {
+                  lepusSpecifiers.push([
+                    specifier.local.name,
+                    t.isIdentifier(specifier.exported)
+                      ? specifier.exported.name
+                      : specifier.exported.value,
+                  ]);
+                }
               });
             }
           },

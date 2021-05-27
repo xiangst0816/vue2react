@@ -41,7 +41,7 @@ export type EventsCollector = Map<
 >;
 
 export interface Template {
-  ast: t.JSXElement | undefined;
+  ast: t.JSXElement | t.JSXExpressionContainer | undefined;
   attrsCollector: Set<string>;
   templateCollector: Set<t.ClassMethod>;
   eventsCollector: EventsCollector;
