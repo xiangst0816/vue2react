@@ -210,6 +210,8 @@ export default class ReactVisitor {
     const attrsCollector = this.app.template.attrsCollector;
 
     attrsCollector.forEach((attr) => {
+      if (this.app.lepus.map((i) => i.name).includes(attr)) return;
+
       if (this.app.script.data[attr]) {
         dataProperties.push(
           t.objectProperty(t.identifier(attr), t.identifier(attr), false, true)

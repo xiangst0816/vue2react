@@ -12,7 +12,7 @@ export function wrapForCommand(
   attrsCollector: Readonly<Set<string>>
 ) {
   if (!t.isJSXElement(element)) {
-    throw new Error("[fpr] tt:fpr 自己必须是 Element");
+    throw new Error("[for] tt:fpr 自己必须是 Element");
   }
 
   const forIdentifier = getCollectedProperty(
