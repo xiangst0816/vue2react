@@ -1,10 +1,3 @@
-<text tt:if="{{!scrollable && !wrapable}}" class="{{name}}__content {{name}}__content-ellipsis"
-      style="color:{{textColor || defaultColor}};"
->
-    {{text}}
-</text>
-<text tt:elif="{{!scrollable && wrapable}}" class="{{name}}__content"
-      style="color:{{textColor || defaultColor}};"
->
-    {{text}}
+<text tt:for="{{[1,2,3,4]}}">
+    {{item}}
 </text>

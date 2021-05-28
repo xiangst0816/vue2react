@@ -1,6 +1,6 @@
 import { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
-import { App, Lepus } from "./utils/types";
+import { App, ITransformOptions, Lepus } from "./utils/types";
 import { ReactComponents } from "./common";
 import {
   getOrCreatedClassMethodInClassBody,
@@ -15,9 +15,23 @@ import { parse } from "@babel/parser";
 
 export default class ReactVisitor {
   app: App;
+  options: Required<ITransformOptions>;
 
-  constructor(app: any) {
+  constructor(app: any, options: ITransformOptions) {
     this.app = app;
+
+    const defaultOptions = {
+      addTopComments: true,
+      hasStyle: false,
+      componentPathRewrite: (name: string, path: string) => path,
+      importCssPath: "./index.scss",
+      reactRuntimeImportDeclaration: `import ReactLynx, { Component } from '@byted-lynx/react-runtime'`,
+      reactComponentsImportDeclaration: `import {${ReactComponents.join(
+        ","
+      )}} from '@byted-lynx/react-components'`,
+    };
+
+    this.options = Object.assign(defaultOptions, options);
   }
 
   genTopStatement(path: NodePath<t.Program>) {
@@ -27,21 +41,20 @@ export default class ReactVisitor {
   }
 
   genLepusImports(path: NodePath<t.Program>, lepusImports: Lepus[]) {
-    // add import { handleText } from './test.lepus';
-    // add import { handleText1, handleText2 } from './test2.lepus';
+    // add import { handleText } from './test.lepus.js';
+    // add import { handleText1, handleText2 } from './test2.lepus.js';
     lepusImports.forEach((lepusImport) => {
       const importSpecifiers: string[][] = lepusImport.specifiers || [];
       const sourceString = lepusImport.path;
 
       if (sourceString && importSpecifiers.length > 0) {
         const importReactComponent = t.importDeclaration(
-          importSpecifiers
-            .map((specifier: string[]) => {
-              let local: t.Identifier = t.identifier(specifier[0]);
-              let imported: t.Identifier = t.identifier(specifier[1]);
-              return t.importSpecifier(local, imported);
-            }),
-          t.stringLiteral(sourceString)
+          importSpecifiers.map((specifier: string[]) => {
+            let local: t.Identifier = t.identifier(specifier[0]);
+            let imported: t.Identifier = t.identifier(specifier[1]);
+            return t.importSpecifier(local, imported);
+          }),
+          t.stringLiteral(`${sourceString}.js`)
         );
         path.node.body.unshift(importReactComponent);
       }
@@ -49,16 +62,18 @@ export default class ReactVisitor {
   }
 
   genComments(path: NodePath<t.Program>) {
-    const contents = [
-      " -------------------------------------",
-      " 当前代码为自动生成，不建议在此基础上二次修改;",
-      " The current code is automatically generated, ",
-      " and it is not recommended to modify it twice on this basis",
-      " -------------------------------------",
-    ];
-    contents.reverse().forEach((content) => {
-      path.addComment("leading", content, true);
-    });
+    if (this.options.addTopComments) {
+      const contents = [
+        " -------------------------------------",
+        " 当前代码为自动生成，不建议在此基础上二次修改;",
+        " The current code is automatically generated, ",
+        " and it is not recommended to modify it twice on this basis",
+        " -------------------------------------",
+      ];
+      contents.reverse().forEach((content) => {
+        path.addComment("leading", content, true);
+      });
+    }
   }
 
   genImports(path: NodePath<t.Program>, hasStyle: boolean) {
@@ -70,6 +85,15 @@ export default class ReactVisitor {
       Object.keys(usingComponents)
         .reverse()
         .forEach((name) => {
+          let defaultDist = `${usingComponents[name]}.jsx`;
+
+          if (this.options.componentPathRewrite) {
+            defaultDist = this.options.componentPathRewrite(
+              name,
+              usingComponents[name]
+            );
+          }
+
           path.node.body.unshift(
             t.importDeclaration(
               [
@@ -77,8 +101,7 @@ export default class ReactVisitor {
                   t.identifier(formatComponentName(name))
                 ),
               ],
-              // TODO： 增加 自定义组件 mapping 规则
-              t.stringLiteral(`${usingComponents[name]}.jsx`)
+              t.stringLiteral(defaultDist)
             )
           );
         });
@@ -88,7 +111,7 @@ export default class ReactVisitor {
     if (hasStyle) {
       const importCSS = t.importDeclaration(
         [],
-        t.stringLiteral("./index.scss")
+        t.stringLiteral(this.options.importCssPath)
       );
       path.node.body.unshift(importCSS);
     }
@@ -101,26 +124,21 @@ export default class ReactVisitor {
     path.node.body.unshift(importPropTypes);
 
     // add 'import { Text } from '@byted-lynx/react-components';'
-    const importReactComponent = t.importDeclaration(
-      ReactComponents.map((componentName) =>
-        t.importSpecifier(
-          t.identifier(componentName),
-          t.identifier(componentName)
-        )
-      ),
-      t.stringLiteral("@byted-lynx/react-components")
+    const importReactComponentsAst = parse(
+      this.options.reactComponentsImportDeclaration,
+      {
+        sourceType: "module",
+      }
     );
+    const importReactComponent = importReactComponentsAst.program
+      .body[0] as t.ImportDeclaration;
     path.node.body.unshift(importReactComponent);
 
     // add 'import ReactLynx, { Component } from '@byted-lynx/react-runtime';'
-    const importReact = t.importDeclaration(
-      [
-        t.importDefaultSpecifier(t.identifier("ReactLynx")),
-        t.importSpecifier(t.identifier("Component"), t.identifier("Component")),
-      ],
-      t.stringLiteral("@byted-lynx/react-runtime")
-    );
-
+    const importReactAst = parse(this.options.reactRuntimeImportDeclaration, {
+      sourceType: "module",
+    });
+    const importReact = importReactAst.program.body[0] as t.ImportDeclaration;
     path.node.body.unshift(importReact);
   }
 
@@ -213,13 +231,6 @@ export default class ReactVisitor {
         }
       } else if (this.app.script.computed[attr]) {
         computed.push(attr);
-      } else {
-        // console.warn(`------------------------`);
-        // console.warn(
-        //   `属性映射未识别，原样输出（也许是在 template 中的变量） ->`,
-        //   attr
-        // );
-        // console.warn(`------------------------`);
       }
 
       return;
@@ -277,7 +288,9 @@ export default class ReactVisitor {
     // 如果
 
     if (t.isJSXExpressionContainer(this.app.template.ast)) {
-      blocks.push(t.returnStatement(this.app.template.ast.expression as t.Expression));
+      blocks.push(
+        t.returnStatement(this.app.template.ast.expression as t.Expression)
+      );
     } else if (t.isExpression(this.app.template.ast)) {
       blocks.push(t.returnStatement(this.app.template.ast));
     }

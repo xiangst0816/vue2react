@@ -75,3 +75,15 @@ export enum NodeType {
   ClassName,
   StyleDeclaration,
 }
+
+export interface ITransformOptions {
+  addTopComments?: boolean;
+  hasStyle?: boolean;
+  componentPathRewrite?: (name: string, path: string) => string;
+  importCssPath?: string; // ./index.scss
+  reactRuntimeImportDeclaration?: string; // import ReactLynx, { Component } from '@byted-lynx/react-runtime'
+  reactComponentsImportDeclaration?: string; // import { Text } from '@byted-lynx/react-components'
+
+  // TODO: add more
+  // TODO: 增加内置参数控制，各类默认行为给一个可控入口
+}

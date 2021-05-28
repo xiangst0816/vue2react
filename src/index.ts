@@ -9,7 +9,7 @@ import templateIterator from "./templateIterator";
 import reactIterator from "./reactIterator";
 import reactTemplateBuilder from "./reactTemplateBuilder";
 import formatCode from "./utils/formatCode";
-import { anyObject } from "./utils/types";
+import { anyObject, ITransformOptions } from "./utils/types";
 
 export interface ICode {
   templateCode: string;
@@ -68,7 +68,7 @@ export function readCode(name: string, baseDir: string): ICode {
 export function transformCode(
   code: ICode,
   componentName: string,
-  options: anyObject // TODO: 增加内置参数控制，各类默认行为给一个可控入口
+  options: ITransformOptions
 ) {
   // script
   const script = scriptIterator(code.scriptCode);
@@ -84,10 +84,11 @@ export function transformCode(
   };
 
   const rast = reactTemplateBuilder(app);
-  const hasStyle = Boolean(code.styleCode);
+
+  options.hasStyle = Boolean(code.styleCode);
 
   // collect-data + react-template => react-ast
-  const targetAst = reactIterator(rast, app, hasStyle);
+  const targetAst = reactIterator(rast, app, options);
   const targetCode = generate(targetAst).code;
 
   // const reactCode = targetCode
@@ -99,7 +100,7 @@ export interface ITransformParams {
   baseDir: string; // eg: xx/xx/components/button.ttml -> xx/xx/components/
   filename: string; // eg: xx/xx/components/button.ttml -> button
   componentName?: string; // 转为组件的话，组件名称；eg: arco-button / ArcoButton
-  options?: anyObject; // 其他编译参数
+  options?: ITransformOptions; // 其他编译参数
 }
 
 export function transform(params: ITransformParams): string | undefined {

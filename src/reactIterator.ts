@@ -1,20 +1,20 @@
 import traverse, { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 import ReactVisitor from "./reactVisitor";
-import { App } from "./utils/types";
+import { App, ITransformOptions } from "./utils/types";
 
 export default function reactIterator(
   rast: t.Node,
   app: App,
-  hasStyle: boolean
+  options: ITransformOptions
 ) {
-  const visitor = new ReactVisitor(app);
+  const visitor = new ReactVisitor(app, options);
 
   traverse(rast, {
     Program(path: NodePath<t.Program>) {
       visitor.genTopStatement(path); // no.3
       visitor.genLepusImports(path, visitor.app.lepus); // no.2
-      visitor.genImports(path, hasStyle); // no.1
+      visitor.genImports(path, Boolean(options.hasStyle)); // no.1
       visitor.genComments(path); // no.0
       visitor.genStaticProps(path);
     },

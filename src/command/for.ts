@@ -67,12 +67,27 @@ export function wrapForCommand(
     }
   }
 
+  // FIX: https://code.byted.org/lynx/template-assembler/merge_requests/8122
+  // check first -> (Array.isArray(list)?list:[]).map(()=>())
   return t.jSXExpressionContainer(
-    t.callExpression(t.memberExpression(forIdentifier, t.identifier("map")), [
-      t.arrowFunctionExpression(
-        [t.identifier(forItemName), t.identifier(forIndexName)],
-        element
+    t.callExpression(
+      t.memberExpression(
+        t.conditionalExpression(
+          t.callExpression(
+            t.memberExpression(t.identifier("Array"), t.identifier("isArray")),
+            [forIdentifier]
+          ),
+          forIdentifier,
+          t.arrayExpression([])
+        ),
+        t.identifier("map")
       ),
-    ])
+      [
+        t.arrowFunctionExpression(
+          [t.identifier(forItemName), t.identifier(forIndexName)],
+          element
+        ),
+      ]
+    )
   );
 }

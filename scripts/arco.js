@@ -36,17 +36,30 @@ const names = [
 names.forEach((name) => {
   console.log("------------------");
   console.log(name);
+  // /Users/xiangst/bytedance/react-lynx-demo3/react-lynx-demo3/src/pages/demo/components
   const baseDir = `/Users/xiangst/bytedance/lynx-mono/packages/lynx-ui/components/${name}`;
-  const distDir = path.resolve(
-    __dirname,
-    `./arco/${_.upperFirst(_.camelCase(name))}`
-  );
+  const distDir = `/Users/xiangst/bytedance/react-lynx-demo3/react-lynx-demo3/src/pages/demo/components/${_.upperFirst(
+    _.camelCase(name)
+  )}`;
+  // const distDir = path.resolve(
+  //   __dirname,
+  //   `./arco/${_.upperFirst(_.camelCase(name))}`
+  // );
   transformFile({
     baseDir: baseDir,
     filename: name,
     componentName: `arco-${name}`,
     distDir: distDir,
     distName: `index.jsx`,
+    options: {
+      componentPathRewrite(name, path) {
+        // arco-icon @byted-lynx/ui/components/icon/icon
+        // ../Icon/index.jsx
+        return `../${_.upperFirst(
+          _.camelCase(path.split("/").splice(-1)[0])
+        )}/index.jsx`;
+      },
+    },
   });
 
   // ttss

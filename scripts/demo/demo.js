@@ -1,49 +1,8 @@
 Component({
     properties: {
         mode: {
-            type: String,
-            value: '', // 通告栏模式，可选值为 closeable link
-        },
-        text: {
-            type: String,
-            value: '',
-            observer: function (newVal, oldVal) {
-                if (newVal !== oldVal) {
-                    this.init();
-                }
-            },
-        },
-        textColor: {
-            type: String,
-            value: '#FF7D00', // 通知文本颜色
-        },
-        bgColor: {
-            type: String,
-            value: '#fffbe8', // 滚动条背景
-        },
-        leftIcon: {
-            type: String,
-            value: '', // 左侧图标名称或图片链接
-        },
-        delay: {
-            type: Number,
-            value: 1000, // 动画延迟时间 (ms)
-        },
-        speed: {
-            type: Number,
-            value: 50, // 滚动速率 (px/s) 50
-        },
-        scrollable: {
-            type: Boolean,
-            value: false, // 是否开启滚动播放，内容长度溢出时默认开启
-        },
-        wrapable: {
-            type: Boolean,
-            value: false, // 是否开启文本换行，只在禁用滚动时生效
-        },
-        direction: {
-            type: String,
-            value: 'left', // 滚动方向，默认向左
+            type: Array,
+            value: [], // 通告栏模式，可选值为 closeable link
         },
     },
     data: {

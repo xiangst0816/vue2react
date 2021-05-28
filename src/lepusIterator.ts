@@ -50,7 +50,7 @@ export default function lepusIterator(
         });
 
         list.push({
-          path: `${lepusPath}.js`,
+          path: lepusPath,
           name: lepusName,
           specifiers: lepusSpecifiers,
         });
