@@ -287,6 +287,48 @@ export default class ReactVisitor {
     );
 
     path.node.body.push(render);
+
+    // style 这里会需要一个 helper function，
+    // 如果 render 里面有 _styleStringToObject 的话
+    path.traverse({
+      CallExpression(cePath) {
+        if (
+          t.isMemberExpression(cePath.node.callee) &&
+          t.isThisExpression(cePath.node.callee.object) &&
+          t.isIdentifier(cePath.node.callee.property) &&
+          cePath.node.callee.property.name === "_styleStringToObject" &&
+          // ClassMethod 不包含 _styleStringToObject 这个方法
+          !path.node.body.some(
+            (i) =>
+              t.isClassMethod(i) &&
+              t.isIdentifier(i.key) &&
+              i.key.name === "_styleStringToObject"
+          )
+        ) {
+          // add _styleStringToObject
+          const script = `class Script {
+            _styleStringToObject (styleInput) {
+              return (styleInput||'').split(';').filter(i=>i&&i.trim()).reduce(function (ruleMap, ruleString) {
+                const rulePair = ruleString.split(':');
+                const name = (rulePair[0].trim()).split('-').map((text,index)=>{
+                  if(index > 0) return text[0].toUpperCase() + text.substr(1);
+                  return text;
+                }).join('');
+                ruleMap[name] = rulePair[1].trim();
+                return ruleMap;
+              }, {});         
+            }
+          }`;
+
+          const vast = parse(script, { sourceType: "module" });
+          const statements = (vast.program.body[0] as t.ClassDeclaration).body
+              .body as t.ClassMethod[];
+          statements.reverse().forEach((statement) => {
+            path.node.body.push(statement);
+          });
+        }
+      },
+    });
   }
 
   genPropertyObserverMethods(path: NodePath<t.ClassBody>) {

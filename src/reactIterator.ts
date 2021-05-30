@@ -29,9 +29,6 @@ export default function reactIterator(
   // lepus
   visitor.genLepusStatement(rast);
 
-  // add helper function
-  // _styleStringToObject
-
   traverse(rast, {
     JSXElement(path: NodePath<t.JSXElement>) {
       visitor.genSelfClosingElement(path);
