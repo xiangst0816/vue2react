@@ -167,6 +167,11 @@ export function getTemplateComponentName(text: string) {
   return _.camelCase(`render-${text}-template-component`);
 }
 
+// typeClass -> lepusTypeClass
+export function getLepusClassMethodName(lepusFunctionName: string) {
+  return _.camelCase(`lepus-${lepusFunctionName}`);
+}
+
 // 'a.b(c) + cc' -> {identifiers:['a','cc'],expression:ast}
 export function transformTextToExpression(text: string) {
   const ast = parser.parse(text);

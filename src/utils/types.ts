@@ -33,6 +33,7 @@ export interface Lepus {
   name: string; // _styleFn
   specifiers: string[][]; // [[local,exported]]
   path: string; // './test.lepus'
+  functionDeclarations: Map<string, t.FunctionDeclaration>;
 }
 
 export type EventsCollector = Map<
@@ -83,6 +84,7 @@ export interface ITransformOptions {
   importCssPath?: string; // ./index.scss
   reactRuntimeImportDeclaration?: string; // import ReactLynx, { Component } from '@byted-lynx/react-runtime'
   reactComponentsImportDeclaration?: string; // import { Text } from '@byted-lynx/react-components'
+  inlineLepus?: boolean;
 
   // TODO: add more
   // TODO: 增加内置参数控制，各类默认行为给一个可控入口

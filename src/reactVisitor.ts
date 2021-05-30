@@ -1,4 +1,4 @@
-import { NodePath } from "@babel/traverse";
+import traverse, { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 import { App, ITransformOptions, Lepus } from "./utils/types";
 import { ReactComponents } from "./common";
@@ -10,6 +10,7 @@ import {
   genObjectExpressionFromObject,
   formatComponentName,
   getClassMethodInClassBody,
+  getLepusClassMethodName,
 } from "./utils/tools";
 import { parse } from "@babel/parser";
 
@@ -21,6 +22,7 @@ export default class ReactVisitor {
     this.app = app;
 
     const defaultOptions = {
+      inlineLepus: true,
       addTopComments: true,
       hasStyle: false,
       componentPathRewrite: (name: string, path: string) => path,
@@ -37,27 +39,6 @@ export default class ReactVisitor {
   genTopStatement(path: NodePath<t.Program>) {
     this.app.script.topStatement.forEach((node) => {
       path.node.body.unshift(node);
-    });
-  }
-
-  genLepusImports(path: NodePath<t.Program>, lepusImports: Lepus[]) {
-    // add import { handleText } from './test.lepus.js';
-    // add import { handleText1, handleText2 } from './test2.lepus.js';
-    lepusImports.forEach((lepusImport) => {
-      const importSpecifiers: string[][] = lepusImport.specifiers || [];
-      const sourceString = lepusImport.path;
-
-      if (sourceString && importSpecifiers.length > 0) {
-        const importReactComponent = t.importDeclaration(
-          importSpecifiers.map((specifier: string[]) => {
-            let local: t.Identifier = t.identifier(specifier[0]);
-            let imported: t.Identifier = t.identifier(specifier[1]);
-            return t.importSpecifier(local, imported);
-          }),
-          t.stringLiteral(`${sourceString}.js`)
-        );
-        path.node.body.unshift(importReactComponent);
-      }
     });
   }
 
@@ -379,23 +360,28 @@ export default class ReactVisitor {
 
   remapLepusMemberExpression(path: NodePath<t.MemberExpression>) {
     const lepusNames = this.app.lepus.map((i) => i.name) || [];
+    // 1
     // Support following syntax:
     // lepus template replace
     // <View style={{ ...this._styleStringToObject(_styleFn.sizeStyle(size)) }} >
     //   <Text>{_styleFn.sizeStyle(size)}</Text>
     // </View>
     // ->
-    // <View style={{ ...this._styleStringToObject(sizeStyle(size)) }} >
-    //   <Text>{sizeStyle(size)}</Text>
+    // <View style={{ ...this._styleStringToObject(this.lepusSizeStyle(size)) }} >
+    //   <Text>{this.lepusSizeStyle(size)}</Text>
     // </View>
     if (
       t.isIdentifier(path.node.object) &&
       lepusNames.includes(path.node.object.name) &&
       t.isCallExpression(path.parent) &&
-      t.isMemberExpression(path.parent.callee)
+      t.isMemberExpression(path.parent.callee) &&
+      t.isIdentifier(path.parent.callee.object) &&
+      t.isIdentifier(path.parent.callee.property)
     ) {
-      // is lepus identifier
-      path.parent.callee = path.parent.callee.property as t.Expression;
+      path.parent.callee.object = t.thisExpression();
+      path.parent.callee.property.name = getLepusClassMethodName(
+        path.parent.callee.property.name
+      );
     }
   }
 
@@ -407,6 +393,109 @@ export default class ReactVisitor {
       // Support following syntax:
       // <View></View> -> <View />
       path.node.openingElement.selfClosing = true;
+    }
+  }
+
+  genLepusStatement(rast: t.Node) {
+    const lepus = this.app.lepus;
+    const lepusNames = lepus.map((i) => i.name) || [];
+    const inlineLepus = Boolean(this.options.inlineLepus);
+
+    if (!inlineLepus) {
+      // Way 1: lepus 从外部 import (lepus 内部有 import 逻辑可以用这个)
+      traverse(rast, {
+        Program(path: NodePath<t.Program>) {
+          // add import { handleText } from './test.lepus.js';
+          // add import { handleText1, handleText2 } from './test2.lepus.js';
+          lepus.forEach((lepusImport) => {
+            const importSpecifiers: string[][] = lepusImport.specifiers || [];
+            const sourceString = lepusImport.path;
+            if (sourceString && importSpecifiers.length > 0) {
+              const importReactComponent = t.importDeclaration(
+                importSpecifiers.map((specifier: string[]) => {
+                  let local: t.Identifier = t.identifier(specifier[0]);
+                  let imported: t.Identifier = t.identifier(specifier[1]);
+                  return t.importSpecifier(local, imported);
+                }),
+                t.stringLiteral(`${sourceString}.js`)
+              );
+              path.node.body.unshift(importReactComponent);
+            }
+          });
+        },
+        MemberExpression(path: NodePath<t.MemberExpression>) {
+          // Support following syntax:
+          // lepus template replace
+          // <View style={{ ...this._styleStringToObject(_styleFn.sizeStyle(size)) }} >
+          //   <Text>{_styleFn.sizeStyle(size)}</Text>
+          // </View>
+          // ->
+          // <View style={{ ...this._styleStringToObject(sizeStyle(size)) }} >
+          //   <Text>{sizeStyle(size)}</Text>
+          // </View>
+          if (
+            t.isIdentifier(path.node.object) &&
+            lepusNames.includes(path.node.object.name) &&
+            t.isCallExpression(path.parent) &&
+            t.isMemberExpression(path.parent.callee)
+          ) {
+            // is lepus identifier
+            path.parent.callee = path.parent.callee.property as t.Expression;
+          }
+        },
+      });
+    } else {
+      // Way 2: methods 全部内联到内部 ClassMethod 上；(lepus全部合并到 jsx 里面，方便管理)
+      traverse(rast, {
+        ClassBody(path: NodePath<t.ClassBody>) {
+          // 全部 lepus 打到 ClassBody 里面；统一处理
+          // [in lepus] export function typeClass () {}
+          // [in class]-> class xx { lepusTypeClass () {} }
+          lepus.forEach((lepus) => {
+            const functionDeclarations = lepus.functionDeclarations;
+            for (const [
+              name,
+              functionDeclaration,
+            ] of functionDeclarations.entries()) {
+              const methodKey = t.isIdentifier(functionDeclaration.id)
+                ? functionDeclaration.id
+                : t.identifier(name);
+              methodKey.name = getLepusClassMethodName(methodKey.name);
+              const lepusFunction = t.classMethod(
+                "method",
+                methodKey,
+                functionDeclaration.params,
+                functionDeclaration.body
+              );
+              path.node.body.push(lepusFunction);
+            }
+          });
+        },
+        MemberExpression(path: NodePath<t.MemberExpression>) {
+          // Support following syntax:
+          // lepus template replace
+          // <View style={{ ...this._styleStringToObject(_styleFn.sizeStyle(size)) }} >
+          //   <Text>{_styleFn.sizeStyle(size)}</Text>
+          // </View>
+          // ->
+          // <View style={{ ...this._styleStringToObject(this.lepusSizeStyle(size)) }} >
+          //   <Text>{this.lepusSizeStyle(size)}</Text>
+          // </View>
+          if (
+            t.isIdentifier(path.node.object) &&
+            lepusNames.includes(path.node.object.name) &&
+            t.isCallExpression(path.parent) &&
+            t.isMemberExpression(path.parent.callee) &&
+            t.isIdentifier(path.parent.callee.object) &&
+            t.isIdentifier(path.parent.callee.property)
+          ) {
+            path.parent.callee.object = t.thisExpression();
+            path.parent.callee.property.name = getLepusClassMethodName(
+              path.parent.callee.property.name
+            );
+          }
+        },
+      });
     }
   }
 

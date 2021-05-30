@@ -1,5 +1,13 @@
 {
   "component": true,
   "usingComponents": {
+  },
+  "usingTemplateAPI": {
+    "templateFunctions": [
+      {
+        "path": "./demo.lepus",
+        "name": "_styleFn"
+      }
+    ]
   }
 }

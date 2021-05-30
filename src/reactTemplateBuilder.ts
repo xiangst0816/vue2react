@@ -11,6 +11,17 @@ export default function reactTemplateBuilder(app: App) {
         super(props);
         this.state=STATE;
       }
+      _styleStringToObject (styleInput) {
+        return (styleInput||'').split(';').filter(i=>i&&i.trim()).reduce(function (ruleMap, ruleString) {
+          const rulePair = ruleString.split(':');
+          const name = (rulePair[0].trim()).split('-').map((text,index)=>{
+            if(index > 0) return text[0].toUpperCase() + text.substr(1);
+            return text;
+          }).join('');
+          ruleMap[name] = rulePair[1].trim();
+          return ruleMap;
+        }, {});         
+      }
     }
   `;
 

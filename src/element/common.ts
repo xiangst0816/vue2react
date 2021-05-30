@@ -7,6 +7,7 @@ import {
   transformTextToExpression,
 } from "../utils/tools";
 
+// 只能转为 style 对象，如果是 style 字符串，marquee 组件会有问题；
 function collectStyleAttrs(
   attr: anyObject,
   attrsCollector: Readonly<Set<string>>,
@@ -14,16 +15,20 @@ function collectStyleAttrs(
 ) {
   const styleDeclarations = attr.children;
   if (styleDeclarations && styleDeclarations.length > 0) {
-    let str: t.Expression | undefined;
+    const objectProperties: (
+      | t.ObjectProperty
+      | t.SpreadElement
+      | t.ObjectMethod
+    )[] = [];
 
     styleDeclarations.forEach((styleDeclaration: anyObject) => {
       if (styleDeclaration.type === NodeType.StyleDeclaration) {
         // StyleDeclaration
         if (styleDeclaration.property && styleDeclaration.value) {
           // Support following syntax:
-          // <view style="color:red;flex-direction:column;"/> -> <div style="color:red;flex-direction:column;"/>
-          // <view style="{{color}}:red;flex-direction:{{column}};"/> -> <div style={color + ":red;flex-direction:" + column + ";"} />
-          // <view style="{{color}}_1:red;flex-direction:{{column}}_2;"/> -> <view style={color + "_1:red;flex-direction:" + column + "_2;"} />
+          // <view style="color:red;flex-direction:column;"/> -> <div style={{color:'red',flexDirection:'column'}}/>
+          // <view style="{{color}}:red;flex-direction:{{column}};"/> -> <div style={{[color+'']:'red',flexDirection:column}}/>
+          // <view style="{{color}}_1:red;flex-direction:{{column}}_2;"/> -> <div style={{[color+'_1']:'red',flexDirection:column+'_2'}}/>
           let property = getCollectedProperty(
             (styleDeclaration.property || []).map((node: anyObject) => {
               if (node.type === NodeType.Mustache) {
@@ -35,7 +40,7 @@ function collectStyleAttrs(
                 return expression;
               } else if (node.type === NodeType.Text) {
                 // Text justify-content -> justifyContent
-                return t.stringLiteral(node.text);
+                return t.stringLiteral(_.camelCase(node.text));
               } else if (node.type === NodeType.WhiteSpace) {
                 // WhiteSpace
                 return t.stringLiteral(" ");
@@ -69,19 +74,26 @@ function collectStyleAttrs(
             false
           );
 
-          str = str ? t.binaryExpression("+", str, property) : property;
-          str = t.binaryExpression("+", str, t.stringLiteral(":"));
-          str = t.binaryExpression("+", str, value);
-          str = t.binaryExpression("+", str, t.stringLiteral(";"));
+          objectProperties.push(
+            t.objectProperty(property, value, t.isBinaryExpression(property))
+          );
         } else if (styleDeclaration.property && styleDeclaration.property[0]) {
           // Support following syntax:
-          // <view style="{{customStyleString}}"/> -> <view style={customStyleString+';'}/>
+          // <view style=";{{customStyleString}};"/> -> <view style={{...this._styleStringToObject(customStyleString)}}/>
           const text = styleDeclaration.property[0].text;
           const { identifiers, expression } = transformTextToExpression(text);
           identifiers.forEach((i) => attrsCollector.add(i));
-
-          str = str ? t.binaryExpression("+", str, expression) : expression;
-          str = t.binaryExpression("+", str, t.stringLiteral(";"));
+          objectProperties.push(
+            t.spreadElement(
+              t.callExpression(
+                t.memberExpression(
+                  t.thisExpression(),
+                  t.identifier("_styleStringToObject")
+                ),
+                [expression]
+              )
+            )
+          );
         }
       } else {
         // 当前 case 不支持；
@@ -89,11 +101,12 @@ function collectStyleAttrs(
       }
     });
 
-    if (str) {
-      styleAttrs.push(
-        t.jSXAttribute(t.jSXIdentifier("style"), t.jSXExpressionContainer(str))
-      );
-    }
+    styleAttrs.push(
+      t.jSXAttribute(
+        t.jSXIdentifier("style"),
+        t.jSXExpressionContainer(t.objectExpression(objectProperties))
+      )
+    );
   }
 }
 

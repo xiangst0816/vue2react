@@ -52,6 +52,7 @@ names.forEach((name) => {
     distDir: distDir,
     distName: `index.jsx`,
     options: {
+      inlineLepus: true,
       componentPathRewrite(name, path) {
         // arco-icon @byted-lynx/ui/components/icon/icon
         // ../Icon/index.jsx
@@ -68,15 +69,6 @@ names.forEach((name) => {
   if (fs.existsSync(ttssSrcFilePath)) {
     fs.createReadStream(ttssSrcFilePath).pipe(
       fs.createWriteStream(ttssDistDirFilePath)
-    );
-  }
-
-  // lepus
-  const lepusSrcFilePath = path.resolve(baseDir, `${name}.lepus`);
-  const lepusDistDirFilePath = path.resolve(distDir, `${name}.lepus.js`);
-  if (fs.existsSync(lepusSrcFilePath)) {
-    fs.createReadStream(lepusSrcFilePath).pipe(
-      fs.createWriteStream(lepusDistDirFilePath)
     );
   }
 });

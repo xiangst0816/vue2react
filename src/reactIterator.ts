@@ -13,7 +13,6 @@ export default function reactIterator(
   traverse(rast, {
     Program(path: NodePath<t.Program>) {
       visitor.genTopStatement(path); // no.3
-      visitor.genLepusImports(path, visitor.app.lepus); // no.2
       visitor.genImports(path, Boolean(options.hasStyle)); // no.1
       visitor.genComments(path); // no.0
       visitor.genStaticProps(path);
@@ -27,11 +26,11 @@ export default function reactIterator(
     },
   });
 
-  traverse(rast, {
-    MemberExpression(path: NodePath<t.MemberExpression>) {
-      visitor.remapLepusMemberExpression(path);
-    },
-  });
+  // lepus
+  visitor.genLepusStatement(rast);
+
+  // add helper function
+  // _styleStringToObject
 
   traverse(rast, {
     JSXElement(path: NodePath<t.JSXElement>) {
