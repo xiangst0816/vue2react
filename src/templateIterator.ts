@@ -18,6 +18,7 @@ export default function templateIterator(template: string): Template {
     new Set(),
     new Set(),
     new Map(),
-    new Map()
+    new Map(),
+    new Set()
   );
 }

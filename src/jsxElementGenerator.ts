@@ -27,7 +27,8 @@ export default function jsxElementGenerator(
   attrsCollector: Set<string>, // 用于在 render 中设置 state/props 等的映射
   templateCollector: Set<t.ClassMethod>, // 用于在 render 中设置 XxTemplateComponent 等子模板
   eventsCollector: EventsCollector, // 用于在 class 中设置 事件处理函数，stopPropagation+bindThis
-  slotsCollector: Map<string, ScriptProps> // 用于搜集 slot 信息，将 slot-name 转为 renderXx props
+  slotsCollector: Map<string, ScriptProps>, // 用于搜集 slot 信息，将 slot-name 转为 renderXx props
+  tagCollector: Set<string>
 ): Template {
   let element: t.JSXElement | t.JSXExpressionContainer | undefined = undefined; // 当前 element
   let wrappedElement:
@@ -45,7 +46,8 @@ export default function jsxElementGenerator(
         attrsCollector,
         templateCollector,
         eventsCollector,
-        slotsCollector
+        slotsCollector,
+        tagCollector
       );
       wrappedElement = element;
       break;
@@ -73,7 +75,12 @@ export default function jsxElementGenerator(
           }
 
           // Element
-          element = genCommonElement(vnode, attrsCollector, eventsCollector);
+          element = genCommonElement(
+            vnode,
+            attrsCollector,
+            eventsCollector,
+            tagCollector
+          );
           wrappedElement = element;
           break;
       }
@@ -109,7 +116,8 @@ export default function jsxElementGenerator(
                   attrsCollector,
                   templateCollector,
                   eventsCollector,
-                  slotsCollector
+                  slotsCollector,
+                  tagCollector
                 );
 
                 // else/elif 不需要独立的 element；这里直接返回
@@ -119,6 +127,7 @@ export default function jsxElementGenerator(
                   templateCollector,
                   eventsCollector,
                   slotsCollector,
+                  tagCollector,
                 };
               case "for":
                 wrappedElement = wrapForCommand(
@@ -151,7 +160,8 @@ export default function jsxElementGenerator(
             attrsCollector,
             templateCollector,
             eventsCollector,
-            slotsCollector
+            slotsCollector,
+            tagCollector
           );
         });
       }
@@ -205,5 +215,6 @@ export default function jsxElementGenerator(
     templateCollector,
     eventsCollector,
     slotsCollector,
+    tagCollector,
   };
 }

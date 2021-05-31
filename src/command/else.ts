@@ -19,7 +19,8 @@ export function injectElseCommand(
   attrsCollector: Set<string>,
   templateCollector: Set<t.ClassMethod>,
   eventsCollector: EventsCollector,
-  slotsCollector: Map<string, ScriptProps>
+  slotsCollector: Map<string, ScriptProps>,
+  tagCollector: Set<string>
 ) {
   if (!t.isJSXElement(parentElement)) {
     throw new Error("[else] tt:else 父节及自己点都必须是 Element");
@@ -133,7 +134,8 @@ export function injectElseCommand(
         attrsCollector,
         templateCollector,
         eventsCollector,
-        slotsCollector
+        slotsCollector,
+        tagCollector
       );
     });
   }

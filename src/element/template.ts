@@ -104,7 +104,8 @@ export function collectTemplateRenderMethods(
       new Set(),
       new Set(),
       new Map(),
-      new Map()
+      new Map(),
+      new Set()
     );
 
     let dataProperties: t.ObjectProperty[] = [

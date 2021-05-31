@@ -335,7 +335,8 @@ function collectEventAttrs(
 export function genCommonElement(
   vnode: anyObject,
   attrsCollector: Set<string>,
-  eventsCollector: EventsCollector
+  eventsCollector: EventsCollector,
+  tagCollector: Set<string>
 ) {
   // Element
   let styleAttrs: t.JSXAttribute[] = [];
@@ -396,6 +397,7 @@ export function genCommonElement(
   // Support following syntax:
   // <view id="xxx"> -> <View id="xxx">
   const tagName = _.upperFirst(_.camelCase(vnode.tag));
+  tagCollector.add(tagName);
   return t.jSXElement(
     t.jSXOpeningElement(t.jSXIdentifier(tagName), [
       ...styleAttrs,

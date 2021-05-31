@@ -1,5 +1,5 @@
 {
-  "component": true,
+  "component": false,
   "usingComponents": {
   },
   "usingTemplateAPI": {

@@ -28,9 +28,8 @@ export default class ReactVisitor {
       componentPathRewrite: (name: string, path: string) => path,
       importCssPath: "./index.scss",
       reactRuntimeImportDeclaration: `import ReactLynx, { Component } from '@byted-lynx/react-runtime'`,
-      reactComponentsImportDeclaration: `import {${ReactComponents.join(
-        ","
-      )}} from '@byted-lynx/react-components'`,
+      reactComponentsImportSource: "@byted-lynx/react-components",
+      reactComponentsImportSpecifiers: ReactComponents,
     };
 
     this.options = Object.assign(defaultOptions, options);
@@ -104,9 +103,13 @@ export default class ReactVisitor {
     );
     path.node.body.unshift(importPropTypes);
 
+
+    const reactComponentsImportSpecifiers = this.options.reactComponentsImportSpecifiers.filter(i => this.app.template.tagCollector.has(i));
+    const reactComponentsImportSource = this.options.reactComponentsImportSource;
+
     // add 'import { Text } from '@byted-lynx/react-components';'
     const importReactComponentsAst = parse(
-      this.options.reactComponentsImportDeclaration,
+      `import { ${reactComponentsImportSpecifiers.join(',')} } from '${reactComponentsImportSource}'`,
       {
         sourceType: "module",
       }
@@ -316,13 +319,13 @@ export default class ReactVisitor {
                 }).join('');
                 ruleMap[name] = rulePair[1].trim();
                 return ruleMap;
-              }, {});         
+              }, {});
             }
           }`;
 
           const vast = parse(script, { sourceType: "module" });
           const statements = (vast.program.body[0] as t.ClassDeclaration).body
-              .body as t.ClassMethod[];
+            .body as t.ClassMethod[];
           statements.reverse().forEach((statement) => {
             path.node.body.push(statement);
           });

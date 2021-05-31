@@ -47,6 +47,7 @@ export interface Template {
   templateCollector: Set<t.ClassMethod>;
   eventsCollector: EventsCollector;
   slotsCollector: Map<string, ScriptProps>;
+  tagCollector: Set<string>;
 }
 
 export interface App {
@@ -83,7 +84,9 @@ export interface ITransformOptions {
   componentPathRewrite?: (name: string, path: string) => string;
   importCssPath?: string; // ./index.scss
   reactRuntimeImportDeclaration?: string; // import ReactLynx, { Component } from '@byted-lynx/react-runtime'
-  reactComponentsImportDeclaration?: string; // import { Text } from '@byted-lynx/react-components'
+  // reactComponentsImportDeclaration?: string; // import { Text } from '@byted-lynx/react-components'
+  reactComponentsImportSpecifiers?:string[]; // ['Text','View']
+  reactComponentsImportSource?:string; // @byted-lynx/react-components
   inlineLepus?: boolean;
 
   // TODO: add more

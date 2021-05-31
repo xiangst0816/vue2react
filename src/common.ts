@@ -32,9 +32,9 @@ export const LynxComponentCycle: Record<string, string | undefined> = {
 };
 
 export const LynxCardCycle: Record<string, string | undefined> = {
-  onLoad: "_lynxCardOnLoad", // 在 constructor 写明 this._lynxComponentCreated()
-  onShow: "_lynxCardOnShow", // 在 componentDidMount -> this.getJSModule("GlobalEventEmitter").addListener("onShow", this._lynxCardOnShow)
-  onHide: "_lynxCardOnHide", // 在 componentDidMount -> this.getJSModule("GlobalEventEmitter").addListener("onHide", this._lynxCardOnHide)
+  onLoad: "_lynxCardOnLoad", // 在 constructor 完成初始化 this._lynxComponentCreated()
+  onShow: "_lynxCardOnShow", // 在 componentDidMount 进行事件监听
+  onHide: "_lynxCardOnHide", // 在 componentDidMount 进行事件监听
   onReady: "componentDidMount",
   onDestroy: "componentWillUnmount",
   onDataChanged: "_lynxCardOnDataChanged", // 在 Card 的 componentDidMount 里面增加 diff 逻辑及触发逻辑

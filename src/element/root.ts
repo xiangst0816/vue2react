@@ -13,7 +13,8 @@ export function genRootElement(
   attrsCollector: Set<string>, // 用于在 render 中设置 state/props 等的映射
   templateCollector: Set<t.ClassMethod>,
   eventsCollector: EventsCollector,
-  slotsCollector: Map<string, ScriptProps>
+  slotsCollector: Map<string, ScriptProps>,
+  tagCollector: Set<string>
 ): t.JSXElement | t.JSXExpressionContainer {
   let element: t.JSXElement | t.JSXExpressionContainer;
 
@@ -28,7 +29,8 @@ export function genRootElement(
       attrsCollector,
       templateCollector,
       eventsCollector,
-      slotsCollector
+      slotsCollector,
+      tagCollector
     );
     if (!_element) throw new Error("根节点解析异常！");
 
@@ -49,7 +51,8 @@ export function genRootElement(
         attrsCollector,
         templateCollector,
         eventsCollector,
-        slotsCollector
+        slotsCollector,
+        tagCollector
       );
     });
   }
@@ -62,7 +65,7 @@ export function genRootElement(
     element.openingElement &&
     element.openingElement.attributes &&
     !element.openingElement.attributes.find(
-      (node) =>t.isJSXAttribute(node) && node.name.name === "onClick"
+      (node) => t.isJSXAttribute(node) && node.name.name === "onClick"
     )
   ) {
     element.openingElement.attributes.push(
