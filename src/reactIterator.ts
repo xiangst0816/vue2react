@@ -10,6 +10,10 @@ export default function reactIterator(
 ) {
   const visitor = new ReactVisitor(app, options);
 
+  // 自定义组件点击透传
+  // options.passTapEvent
+  visitor.patchPassTapEvent();
+
   traverse(rast, {
     Program(path: NodePath<t.Program>) {
       visitor.genTopStatement(path); // no.3
@@ -29,6 +33,7 @@ export default function reactIterator(
   // lepus
   visitor.genLepusStatement(rast);
 
+  // tag self close
   traverse(rast, {
     JSXElement(path: NodePath<t.JSXElement>) {
       visitor.genSelfClosingElement(path);

@@ -89,9 +89,9 @@ export function collectTemplateRenderMethods(
       templateNode = vnode;
       templateNode.tag = EmptyTag; // 默认给个 EmptyTag = view
       templateNode.attrs = []; // 清除属性
-      logger.log(
-        `[Warn] 边界提示，template 里面的元素建议包裹一层，不建议罗列，因为 LynxReact 这边没有 Fragment 组件`
-      );
+      // logger.log(
+      //   `[Warn] 边界提示，template 里面的元素建议包裹一层，不建议罗列，因为 LynxReact 这边没有 Fragment 组件`
+      // );
     }
 
     // 遍历完 template 内部节点

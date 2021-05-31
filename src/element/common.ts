@@ -398,13 +398,18 @@ export function genCommonElement(
   // <view id="xxx"> -> <View id="xxx">
   const tagName = _.upperFirst(_.camelCase(vnode.tag));
   tagCollector.add(tagName);
+  let attributes = [
+    ...styleAttrs,
+    ...classAttrs,
+    ...commonAttrs,
+    ...eventAttrs,
+  ];
+  if (tagName === "Block") {
+    // block 标签内部不支持任何属性
+    attributes = [];
+  }
   return t.jSXElement(
-    t.jSXOpeningElement(t.jSXIdentifier(tagName), [
-      ...styleAttrs,
-      ...classAttrs,
-      ...commonAttrs,
-      ...eventAttrs,
-    ]),
+    t.jSXOpeningElement(t.jSXIdentifier(tagName), attributes),
     t.jSXClosingElement(t.jSXIdentifier(tagName)),
     []
   );

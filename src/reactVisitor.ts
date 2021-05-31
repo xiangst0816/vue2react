@@ -22,6 +22,7 @@ export default class ReactVisitor {
     this.app = app;
 
     const defaultOptions = {
+      passTapEvent: true,
       inlineLepus: true,
       addTopComments: true,
       hasStyle: false,
@@ -33,6 +34,52 @@ export default class ReactVisitor {
     };
 
     this.options = Object.assign(defaultOptions, options);
+  }
+
+  patchPassTapEvent() {
+    // 自定义组件点击透传
+    // options.passTapEvent
+    if (
+      Boolean(this.app.config.component) &&
+      Boolean(this.options.passTapEvent)
+    ) {
+      // click pass through
+      const templateAst = this.app.template.ast;
+      if (
+        t.isJSXElement(templateAst) &&
+        t.isJSXIdentifier(templateAst.openingElement.name) &&
+        templateAst.openingElement.name.name !== "Block" &&
+        templateAst.openingElement.attributes &&
+        !templateAst.openingElement.attributes.find(
+          (node) => t.isJSXAttribute(node) && node.name.name === "onClick"
+        )
+      ) {
+        // 1. 找到 root 节点，看是否能加
+        // [Component] 根节点自动加 onClick 属性；外部绑定 bindtap 这里通过这个方式触发
+        // <View onClick={this.props.onClick}>{}</View>
+        templateAst.openingElement.attributes.push(
+          t.jSXAttribute(
+            t.jSXIdentifier("onClick"),
+            t.jSXExpressionContainer(
+              t.memberExpression(
+                t.memberExpression(t.thisExpression(), t.identifier("props")),
+                t.identifier("onClick")
+              )
+            )
+          )
+        );
+
+        // 2. this.app.script.props 中添加 onClick；ttml 默认可以在外部绑定 bindtap 的，这里做下默认填加
+        this.app.script.props.set("onClick", {
+          type: "func",
+          typeValue: "func",
+          defaultValue: null,
+          required: false,
+          validator: false,
+          observer: false,
+        });
+      }
+    }
   }
 
   genTopStatement(path: NodePath<t.Program>) {
@@ -103,13 +150,17 @@ export default class ReactVisitor {
     );
     path.node.body.unshift(importPropTypes);
 
-
-    const reactComponentsImportSpecifiers = this.options.reactComponentsImportSpecifiers.filter(i => this.app.template.tagCollector.has(i));
-    const reactComponentsImportSource = this.options.reactComponentsImportSource;
+    const reactComponentsImportSpecifiers = this.options.reactComponentsImportSpecifiers.filter(
+      (i) => this.app.template.tagCollector.has(i)
+    );
+    const reactComponentsImportSource = this.options
+      .reactComponentsImportSource;
 
     // add 'import { Text } from '@byted-lynx/react-components';'
     const importReactComponentsAst = parse(
-      `import { ${reactComponentsImportSpecifiers.join(',')} } from '${reactComponentsImportSource}'`,
+      `import { ${reactComponentsImportSpecifiers.join(
+        ","
+      )} } from '${reactComponentsImportSource}'`,
       {
         sourceType: "module",
       }
@@ -128,22 +179,9 @@ export default class ReactVisitor {
 
   genStaticProps(path: NodePath<t.Program>) {
     const props = new Map([
-      // ttml 默认可以在外部绑定 bindtap 的，这里做下默认填加
-      [
-        "onClick",
-        {
-          type: "func",
-          typeValue: "func",
-          defaultValue: null,
-          required: false,
-          validator: false,
-          observer: false,
-        },
-      ],
       ...this.app.script.props,
       ...this.app.template.slotsCollector,
     ]);
-
     path.node.body.push(genPropTypes(props, this.app.script.name));
     path.node.body.push(genDefaultProps(props, this.app.script.name));
   }
@@ -401,33 +439,6 @@ export default class ReactVisitor {
     path.node.body.push(
       t.classProperty(t.identifier("config"), objectExpression)
     );
-  }
-
-  remapLepusMemberExpression(path: NodePath<t.MemberExpression>) {
-    const lepusNames = this.app.lepus.map((i) => i.name) || [];
-    // 1
-    // Support following syntax:
-    // lepus template replace
-    // <View style={{ ...this._styleStringToObject(_styleFn.sizeStyle(size)) }} >
-    //   <Text>{_styleFn.sizeStyle(size)}</Text>
-    // </View>
-    // ->
-    // <View style={{ ...this._styleStringToObject(this.lepusSizeStyle(size)) }} >
-    //   <Text>{this.lepusSizeStyle(size)}</Text>
-    // </View>
-    if (
-      t.isIdentifier(path.node.object) &&
-      lepusNames.includes(path.node.object.name) &&
-      t.isCallExpression(path.parent) &&
-      t.isMemberExpression(path.parent.callee) &&
-      t.isIdentifier(path.parent.callee.object) &&
-      t.isIdentifier(path.parent.callee.property)
-    ) {
-      path.parent.callee.object = t.thisExpression();
-      path.parent.callee.property.name = getLepusClassMethodName(
-        path.parent.callee.property.name
-      );
-    }
   }
 
   genSelfClosingElement(path: NodePath<t.JSXElement>) {

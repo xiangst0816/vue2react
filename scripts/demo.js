@@ -6,6 +6,7 @@ transformFile({
   componentName: "demo",
   distDir: "./demo-dist",
   options: {
+    inlineLepus: false,
     componentPathRewrite(name, path) {
       console.log(name, path);
       return path;

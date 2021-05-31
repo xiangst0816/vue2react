@@ -7,6 +7,7 @@ import {
 import logger from "../utils/logUtil";
 import * as t from "@babel/types";
 import jsxElementGenerator from "../jsxElementGenerator";
+import { EmptyTag } from "../common";
 
 export function genRootElement(
   vnode: anyObject,
@@ -37,12 +38,11 @@ export function genRootElement(
     element = _element;
   } else {
     element = t.jSXElement(
-      t.jSXOpeningElement(t.jSXIdentifier("View"), []),
-      t.jSXClosingElement(t.jSXIdentifier("View")),
+      t.jSXOpeningElement(t.jSXIdentifier(EmptyTag), []),
+      t.jSXClosingElement(t.jSXIdentifier(EmptyTag)),
       []
     );
 
-    logger.log("[root] ReactLynx 不支持多个根节点，这里会包裹一层 View"); // TODO:DOC
     (vnode.children || []).forEach((child: anyObject) => {
       // wrappedElement 对外， element 是内部的东西，看下要往 element 中塞入 children
       jsxElementGenerator(
@@ -55,30 +55,6 @@ export function genRootElement(
         tagCollector
       );
     });
-  }
-
-  // 根节点自动加 onClick 属性；外部绑定 bindtap 这里通过这个方式触发
-  // <View onClick={this.props.onClick}>{}</View>
-  if (
-    t.isJSXElement(element) &&
-    element &&
-    element.openingElement &&
-    element.openingElement.attributes &&
-    !element.openingElement.attributes.find(
-      (node) => t.isJSXAttribute(node) && node.name.name === "onClick"
-    )
-  ) {
-    element.openingElement.attributes.push(
-      t.jSXAttribute(
-        t.jSXIdentifier("onClick"),
-        t.jSXExpressionContainer(
-          t.memberExpression(
-            t.memberExpression(t.thisExpression(), t.identifier("props")),
-            t.identifier("onClick")
-          )
-        )
-      )
-    );
   }
 
   return element;

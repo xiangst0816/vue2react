@@ -67,13 +67,6 @@ export default function jsxElementGenerator(
 
           break;
         default:
-          if (vnode.tag === "block") {
-            console.warn(
-              `[log] ReactLynx 没有 Fragment 组件, <block> 这里会替换成 <${EmptyTag}>`
-            );
-            vnode.tag = EmptyTag; // view
-          }
-
           // Element
           element = genCommonElement(
             vnode,
@@ -86,7 +79,6 @@ export default function jsxElementGenerator(
       }
 
       // 所有元素都可以加 commands
-
       // tt:if/tt:for 等操作，需要在 element 外再包裹一层指令(element 必须存在)
       let commands = vnode.commands;
       if (
@@ -201,11 +193,11 @@ export default function jsxElementGenerator(
     }
   }
 
-  if (!wrappedElement) {
-    debugger;
-    // 需要断点看看这里少处理了哪些 tag
-    // throw new Error("check");
-  }
+  // if (!wrappedElement) {
+  //   debugger;
+  //   // 需要断点看看这里少处理了哪些 tag
+  //   // throw new Error("check");
+  // }
 
   ast = wrappedElement;
 

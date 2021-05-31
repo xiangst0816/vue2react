@@ -1,12 +1,10 @@
 {
   "component": false,
-  "usingComponents": {
-  },
   "usingTemplateAPI": {
     "templateFunctions": [
       {
         "path": "./demo.lepus",
-        "name": "_styleFn"
+        "name": "_Fn"
       }
     ]
   }

@@ -46,7 +46,7 @@ export function wrapForCommand(
     if (firstTextNode.type === NodeType.Text) {
       forItemName = firstTextNode.text;
     } else {
-      debugger;
+      throw new Error('[tt:for-item] 不支持 tt:for-item="{{item}}" 这样的写法转换');
     }
   }
 

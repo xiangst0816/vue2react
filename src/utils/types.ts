@@ -80,6 +80,7 @@ export enum NodeType {
 }
 
 export interface ITransformOptions {
+  passTapEvent?: boolean; // 自定义 component 是否自动补充 onClick 进行事件绑定透传， 默认 true
   addTopComments?: boolean;
   hasStyle?: boolean;
   componentPathRewrite?: (name: string, path: string) => string;
