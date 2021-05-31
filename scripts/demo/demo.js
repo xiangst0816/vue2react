@@ -1,30 +1,27 @@
 Component({
-  properties: {
-    b: {
-      type: String,
-      value: "",
+  properties: {},
+  data: {},
+  ppppppp: 123,
+  methods: {},
+  pageLifetimes: {
+    show() {
+      console.log(`pageLifetimes show`);
+    },
+    hide() {
+      console.log(`pageLifetimes hide`);
     },
   },
-  data: {
-    a: 1,
-  },
-  methods: {},
-
   created() {
-    this.a = this.data.a;
-    this.b = this.properties.b;
+    console.log(`created`);
   },
   attached() {
-    this.a = this.data.a;
-    this.b = this.properties.b;
+    console.log(`attached`);
   },
   ready() {
-    this.a = this.data.a;
-    this.b = this.properties.b;
+    console.log(`ready`);
   },
   detached() {
-    this.a = this.data.a;
-    this.b = this.properties.b;
+    console.log(`detached`);
   },
   // moved(){},
 });

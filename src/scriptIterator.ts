@@ -125,6 +125,11 @@ export default function scriptIterator(script: string) {
             // computed: { reverseName() {...} }
             visitor.computedHandler(path);
             break;
+          case "pageLifetimes":
+            // Support following syntax:
+            // pageLifetimes: { show() {...}, hide() {...} }
+            // TODO: 待支持（函数写法转换，函数mapping）
+            break;
           default:
             break;
         }
