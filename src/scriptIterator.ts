@@ -12,6 +12,20 @@ export default function scriptIterator(script: string) {
 
   const visitor = new ScriptVisitor();
 
+  // tt type -> Card/Component
+  traverse(vast, {
+    CallExpression(path) {
+      if (
+        t.isProgram(path.parentPath.parent) &&
+        t.isIdentifier(path.node.callee) &&
+        (path.node.callee.name === "Component" ||
+          path.node.callee.name === "Card")
+      ) {
+        visitor.script.component = path.node.callee.name === "Component";
+      }
+    },
+  });
+
   // Processing function notation
   // { onError: function () {} } -> { onError () {} }
   // { onError: () => {} } -> { onError () {} }

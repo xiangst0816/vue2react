@@ -10,6 +10,7 @@ export default class ScriptVisitor {
 
   constructor() {
     this.script = {
+      component: false,
       topStatement: [],
       name: "",
       data: {},

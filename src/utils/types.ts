@@ -20,6 +20,7 @@ export type ScriptObserver = {
 };
 
 export interface Script {
+  component: boolean;
   name: string;
   data: anyObject; // todo: to map
   props: Map<string, ScriptProps>;

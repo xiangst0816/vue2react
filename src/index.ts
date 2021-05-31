@@ -76,11 +76,17 @@ export function transformCode(
 
   const template = templateIterator(code.templateCode);
   const lepus = lepusIterator(code.config, code.lepusCodeMap);
+
+  const config = {
+    ...code.config,
+    component: script.component, // 根据 js 中的构造函数判断是 Card 还是 Component
+  };
+
   const app = {
     script,
     template,
     lepus,
-    config: code.config,
+    config: config,
   };
 
   const rast = reactTemplateBuilder(app);
